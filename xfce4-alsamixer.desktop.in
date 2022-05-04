@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+_Name=Xfce Alsamixer
+_Comment=GUI Alsa Mixer
+_GenericName=Alsa Mixer
+Exec=xfce4-alsamixer
+Icon=org.xfce.terminal
+Terminal=false
+Type=Application
+Categories=GTK;System;AlsaMixer;
+StartupNotify=true
+Actions=preferences;

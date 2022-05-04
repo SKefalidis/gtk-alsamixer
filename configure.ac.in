@@ -1,0 +1,176 @@
+dnl
+dnl Copyright (c) 2003-2009
+dnl         os-cillation e.K. All rights reserved.
+dnl
+dnl Written by Benedikt Meurer <benny@xfce.org>.
+dnl
+
+dnl ***************************
+dnl *** Version information ***
+dnl ***************************
+m4_define([alsamixer_version_major], [1])
+m4_define([alsamixer_version_minor], [0])
+m4_define([alsamixer_version_micro], [0])
+m4_define([alsamixer_version_nano], [])
+m4_define([alsamixer_version_build], [@REVISION@])
+m4_define([alsamixer_version_tag], [git])
+m4_define([alsamixer_version], [alsamixer_version_major().alsamixer_version_minor().alsamixer_version_micro()ifelse(alsamixer_version_nano(), [], [], [.alsamixer_version_nano()])ifelse(alsamixer_version_tag(), [git], [alsamixer_version_tag()-alsamixer_version_build()], [alsamixer_version_tag()])])
+
+dnl *******************************************
+dnl *** Debugging support for GIT snapshots ***
+dnl *******************************************
+m4_define([alsamixer_debug_default], [ifelse(alsamixer_version_tag(), [git], [yes], [minimum])])
+
+dnl ****************************
+dnl *** For intltool support ***
+dnl ****************************
+m4_define([intltool_minimum_version], [0.35])
+
+dnl ***************************
+dnl *** Initialize autoconf ***
+dnl ***************************
+AC_COPYRIGHT([Copyright (c) 2003-2022
+        Sergios - Anestis Kefalidis, Vitaliy Kopylov. All rights reserved.])
+
+AC_INIT([xfce4-alsamixer], [alsamixer_version], [https://github.com/SKefalidis/gtk-alsamixer/])
+AC_REVISION([@REVISION@])
+AC_PREREQ([2.69])
+AC_ARG_PROGRAM()
+
+dnl ***************************
+dnl *** Initialize automake ***
+dnl ***************************
+AM_INIT_AUTOMAKE([1.8 dist-bzip2 tar-ustar no-dist-gzip foreign])
+AC_CONFIG_HEADERS([config.h])
+AM_MAINTAINER_MODE()
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+AC_CONFIG_MACRO_DIRS([m4])
+
+dnl *******************************
+dnl *** Check for UNIX variants ***
+dnl *******************************
+AC_USE_SYSTEM_EXTENSIONS
+
+dnl ********************************
+dnl *** Check for basic programs ***
+dnl ********************************
+AC_PROG_CC()
+AM_PROG_CC_C_O()
+AC_PROG_INSTALL()
+IT_PROG_INTLTOOL([intltool_minimum_version], [no-xml])
+
+dnl **************************
+dnl *** Initialize libtool ***
+dnl **************************
+LT_PREREQ([2.2.6])
+LT_INIT([disable-static])
+
+dnl **********************************
+dnl *** Check for standard headers ***
+dnl **********************************
+AC_CHECK_HEADERS([ctype.h errno.h limits.h pwd.h signal.h time.h unistd.h locale.h stdlib.h])
+
+dnl ******************************
+dnl *** Check for i18n support ***
+dnl ******************************
+XDT_I18N([@LINGUAS@])
+
+dnl ********************************
+dnl *** Check for X11 (optional) ***
+dnl ********************************
+XDT_CHECK_LIBX11()
+
+dnl ***********************************
+dnl *** Check for required packages ***
+dnl ***********************************
+XDT_CHECK_PACKAGE([GTK], [gtk+-2.0], [2.22.0])
+XDT_CHECK_PACKAGE([ALSA], [alsa], [1.2.0])
+XDT_CHECK_PACKAGE([LIBXFCE4UI], [libxfce4ui-2], [4.16.0])
+
+dnl ****************************************
+dnl *** Check if we need to use utempter ***
+dnl ****************************************
+AC_ARG_WITH([utempter], [AC_HELP_STRING([--with-utempter],
+            [Support for utmp/wtmp files (requires libutempter) [default=no]])],, [with_utempter=no])
+if test x"$with_utempter" = x"yes"; then
+    AC_CHECK_LIB([utempter],[utempter_add_record],,[with_utempter=no])
+
+    if test x"$with_utempter" = x"no"; then
+        AC_MSG_ERROR([Compiling with --with-utempter but libutempter not found.])
+    fi
+fi
+AM_CONDITIONAL([HAVE_UTEMPTER], [test x"$with_utempter" = x"yes"])
+
+dnl ****************************************
+dnl *** Register in Gnome Control Center ***
+dnl ****************************************
+AC_ARG_WITH([gnome-default-appsdir],
+            [AC_HELP_STRING([--with-gnome-default-appsdir=PATH],
+                            [Specify where to install the Gnome default applications file (default=autodetect)])],
+            [gnome_default_appsdir="$withval"])
+AC_MSG_CHECKING([for Gnome default applications dir])
+if test x"$gnome_default_appsdir" = x""; then
+  GNOME_DEFAULT_APPSDIR="`$PKG_CONFIG --variable=defappsdir gnome-default-applications`"
+  if test -n "$GNOME_DEFAULT_APPSDIR"; then
+    AC_MSG_RESULT([Using path supplied by gnome-control-center])
+  else
+    AC_MSG_RESULT([Using prefix of terminal])
+  fi
+else
+  GNOME_DEFAULT_APPSDIR="$gnome_default_appsdir"
+  AC_MSG_RESULT([Using path supplied by user])
+fi
+AM_CONDITIONAL([HAVE_GNOME_DEFAULT_APPSDIR], [test -n "$GNOME_DEFAULT_APPSDIR"])
+AC_SUBST([GNOME_DEFAULT_APPSDIR])
+
+dnl *************************
+dnl *** Check for gtk-doc ***
+dnl *************************
+GTK_DOC_CHECK([1.9])
+
+dnl ***********************************
+dnl *** Check for debugging support ***
+dnl ***********************************
+XDT_FEATURE_DEBUG([alsamixer_debug_default])
+
+dnl **************************************
+dnl *** Check for linker optimizations ***
+dnl **************************************
+XDT_FEATURE_LINKER_OPTS()
+
+dnl *********************************
+dnl *** Substitute platform flags ***
+dnl *********************************
+AC_MSG_CHECKING([PLATFORM_CPPFLAGS])
+AC_MSG_RESULT([$PLATFORM_CPPFLAGS])
+AC_SUBST([PLATFORM_CPPFLAGS])
+AC_MSG_CHECKING([PLATFORM_CFLAGS])
+AC_MSG_RESULT([$PLATFORM_CFLAGS])
+AC_SUBST([PLATFORM_CFLAGS])
+AC_MSG_CHECKING([PLATFORM_LDFLAGS])
+AC_MSG_RESULT([$PLATFORM_LDFLAGS])
+AC_SUBST([PLATFORM_LDFLAGS])
+
+AC_CONFIG_FILES([
+Makefile
+doc/Makefile
+po/Makefile.in
+alsamixer/Makefile
+icons/Makefile
+icons/16x16/Makefile
+icons/24x24/Makefile
+icons/32x32/Makefile
+icons/48x48/Makefile
+icons/128x128/Makefile
+icons/scalable/Makefile
+])
+AC_OUTPUT
+
+dnl ***************************
+dnl *** Print configuration ***
+dnl ***************************
+echo
+echo "Build Configuration:"
+echo
+echo "* Debug support:           $enable_debug"
+echo

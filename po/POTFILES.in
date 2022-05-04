@@ -1,0 +1,8 @@
+alsamixer/gam-app.c
+alsamixer/gam-mixer.c
+alsamixer/gam-slider.c
+alsamixer/gam-slider-dual.c
+alsamixer/gam-slider-pan.c
+alsamixer/gam-toggle.c
+
+xfce4-alsamixer.desktop.in
