@@ -2,7 +2,7 @@
 CC=gcc
 
 # set compiler options here.
-CFLAGS = -lm -fpermissive
+CFLAGS = -lm
 
 # set the name of the executable file to compile here
 PROGRAM = gtk-alsamixer
