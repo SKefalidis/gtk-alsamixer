@@ -545,7 +545,7 @@ gam_mixer_construct_sliders (GamMixer *gam_mixer)
     for (elem = snd_mixer_first_elem (gam_mixer->priv->handle); elem; elem = snd_mixer_elem_next (elem)) {
         if (snd_mixer_selem_is_active (elem)) {
             if (snd_mixer_selem_has_playback_volume (elem) || snd_mixer_selem_has_capture_volume (elem)) {
-                if (gam_app_get_mixer_slider_style (GAM_APP (gam_mixer->priv->app)) == 1) {
+                if (gam_app_get_mixer_slider_style () == 1) {
                     slider = gam_slider_dual_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
                     gam_slider_dual_set_size_groups (GAM_SLIDER_DUAL (slider),
                                                      gam_mixer->priv->pan_size_group,

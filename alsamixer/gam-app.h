@@ -50,20 +50,11 @@ struct _GamAppClass
     GtkWindowClass parent_class;
 };
 
-#include "gam-mixer.h"
-
 GType        gam_app_get_type                (void) G_GNUC_CONST;
 GtkWidget   *gam_app_new                     (void);
 void         gam_app_run                     (GamApp *gam_app);
-gint         gam_app_get_num_cards           (GamApp *gam_app);
-GamMixer    *gam_app_get_mixer               (GamApp *gam_app,
-                                              gint    index);
-gint         gam_app_get_mixer_slider_style  (GamApp *gam_app);
-void         gam_app_set_mixer_slider_style  (GamApp *gam_app,
-                                              gint    style);
-gint         gam_app_get_slider_toggle_style (GamApp *gam_app);
-void         gam_app_set_slider_toggle_style (GamApp *gam_app,
-                                              gint    style);
+gint gam_app_get_mixer_slider_style ();
+gint gam_app_get_slider_toggle_style ();
 
 G_END_DECLS
 

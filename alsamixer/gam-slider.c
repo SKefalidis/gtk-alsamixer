@@ -207,7 +207,7 @@ gam_slider_constructor (GType                  type,
                         gam_slider->priv->label, FALSE, TRUE, 0);
 
     if (snd_mixer_selem_has_playback_switch (gam_slider->priv->elem)) {
-        if (gam_app_get_slider_toggle_style (GAM_APP (gam_slider->priv->app)) == 0)
+        if (gam_app_get_slider_toggle_style () == 0)
             gam_slider->priv->mute_button = gtk_toggle_button_new_with_label (_("Mute"));
         else
             gam_slider->priv->mute_button = gtk_check_button_new_with_label (_("Mute"));
@@ -225,7 +225,7 @@ gam_slider_constructor (GType                  type,
                         gam_slider->priv->mute_button, FALSE, FALSE, 0);
 
     if (snd_mixer_selem_has_capture_switch (gam_slider->priv->elem)) {
-        if (gam_app_get_slider_toggle_style (GAM_APP (gam_slider->priv->app)) == 0)
+        if (gam_app_get_slider_toggle_style () == 0)
             gam_slider->priv->capture_button = gtk_toggle_button_new_with_label (_("Rec."));
         else
             gam_slider->priv->capture_button = gtk_check_button_new_with_label (_("Rec."));

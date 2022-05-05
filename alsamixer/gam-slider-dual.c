@@ -164,7 +164,7 @@ gam_slider_dual_constructor (GType                  type,
     gam_slider_add_volume_widget (GAM_SLIDER (gam_slider_dual), hbox);
 
     if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
-        if (gam_app_get_slider_toggle_style (GAM_APP (gam_slider_dual->priv->app)) == 0)
+        if (gam_app_get_slider_toggle_style () == 0)
             gam_slider_dual->priv->lock_button = gtk_toggle_button_new_with_label (_("Lock"));
         else
             gam_slider_dual->priv->lock_button = gtk_check_button_new_with_label (_("Lock"));
