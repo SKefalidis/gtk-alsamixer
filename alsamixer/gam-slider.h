@@ -40,12 +40,15 @@ G_BEGIN_DECLS
 #define GAM_IS_SLIDER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GAM_TYPE_SLIDER))
 #define GAM_SLIDER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), GAM_TYPE_SLIDER, GamSliderClass))
 
+typedef struct _GamSliderPrivate GamSliderPrivate;
 typedef struct _GamSlider GamSlider;
 typedef struct _GamSliderClass GamSliderClass;
 
 struct _GamSlider
 {
     GtkHBox parent_instance;
+
+    GamSliderPrivate *priv;
 };
 
 struct _GamSliderClass
