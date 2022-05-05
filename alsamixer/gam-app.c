@@ -32,8 +32,6 @@
 
 #define GAM_APP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GAM_TYPE_APP, GamAppPrivate))
 
-typedef struct _GamAppPrivate GamAppPrivate;
-
 struct _GamAppPrivate
 {
     GtkWidget      *status_bar;
@@ -46,7 +44,6 @@ struct _GamAppPrivate
 };
 
 static void      gam_app_class_init                    (GamAppClass           *klass);
-static void      gam_app_init                          (GamApp                *gam_app);
 static gboolean  gam_app_delete                        (GtkWidget             *widget,
                                                         gpointer               user_data);
 static void      gam_app_destroy                       (GtkObject             *object);
@@ -75,32 +72,8 @@ static void      gam_app_ui_disconnect_proxy_cb        (GtkUIManager          *m
 
 static gpointer parent_class;
 
-
-GType
-gam_app_get_type (void)
-{
-    static GType gam_app_type = 0;
-
-    if (!gam_app_type) {
-        static const GTypeInfo gam_app_info =
-        {
-            sizeof (GamAppClass),
-            NULL,               /* base_init */
-            NULL,               /* base_finalize */
-            (GClassInitFunc) gam_app_class_init,
-            NULL,               /* class_finalize */
-            NULL,               /* class_data */
-            sizeof (GamApp),
-            0,                  /* n_preallocs */
-            (GInstanceInitFunc) gam_app_init,
-        };
-
-        gam_app_type = g_type_register_static (GTK_TYPE_WINDOW, "GamApp",
-                                               &gam_app_info, (GTypeFlags)0);
-    }
-
-    return gam_app_type;
-}
+G_DEFINE_TYPE_WITH_CODE (GamApp , gam_app, GTK_TYPE_WINDOW,
+                         G_ADD_PRIVATE (GamApp))
 
 static void
 gam_app_class_init (GamAppClass *klass)
@@ -116,35 +89,31 @@ gam_app_class_init (GamAppClass *klass)
     gobject_class->constructor = gam_app_constructor;
 
     object_class->destroy = gam_app_destroy;
-
-    g_type_class_add_private (gobject_class, sizeof (GamAppPrivate));
 }
 
 static void
 gam_app_init (GamApp *gam_app)
 {
-    GamAppPrivate *priv;
-
     g_return_if_fail (GAM_IS_APP (gam_app));
 
-    priv = GAM_APP_GET_PRIVATE (gam_app);
+    gam_app->priv = gam_app_get_instance_private (gam_app);
 
-//    priv->ui_manager = gtk_ui_manager_new ();
-//    priv->ui_accel_group = gtk_ui_manager_get_accel_group (priv->ui_manager);
+//    gam_app->priv->ui_manager = gtk_ui_manager_new ();
+//    gam_app->priv->ui_accel_group = gtk_ui_manager_get_accel_group (gam_app->priv->ui_manager);
 
-    priv->main_action_group = gtk_action_group_new ("MainActions");
+    gam_app->priv->main_action_group = gtk_action_group_new ("MainActions");
 
 #ifdef ENABLE_NLS
-    gtk_action_group_set_translation_domain (priv->main_action_group, GETTEXT_PACKAGE);
+    gtk_action_group_set_translation_domain (gam_app->priv->main_action_group, GETTEXT_PACKAGE);
 #endif
 
-//    priv->status_bar = gtk_statusbar_new ();
-    priv->tip_message_cid = gtk_statusbar_get_context_id (GTK_STATUSBAR (priv->status_bar),
+//    gam_app->priv->status_bar = gtk_statusbar_new ();
+    gam_app->priv->tip_message_cid = gtk_statusbar_get_context_id (GTK_STATUSBAR (gam_app->priv->status_bar),
                                                           "GamAppToolTips");
 
-    priv->notebook = gtk_notebook_new ();
-    gtk_notebook_set_scrollable (GTK_NOTEBOOK (priv->notebook), TRUE);
-    gtk_notebook_set_tab_pos (GTK_NOTEBOOK (priv->notebook), GTK_POS_TOP);
+    gam_app->priv->notebook = gtk_notebook_new ();
+    gtk_notebook_set_scrollable (GTK_NOTEBOOK (gam_app->priv->notebook), TRUE);
+    gtk_notebook_set_tab_pos (GTK_NOTEBOOK (gam_app->priv->notebook), GTK_POS_TOP);
 }
 
 static gboolean
@@ -174,19 +143,16 @@ gam_app_destroy (GtkObject *object)
 #endif
 
     GamApp *gam_app;
-    GamAppPrivate *priv;
 
     g_return_if_fail (object != NULL);
     g_return_if_fail (GAM_IS_APP (object));
 
     gam_app = GAM_APP (object);
 
-    priv = GAM_APP_GET_PRIVATE (gam_app);
-
     gtk_main_quit ();
 
-    priv->status_bar = NULL;
-    priv->notebook = NULL;
+    gam_app->priv->status_bar = NULL;
+    gam_app->priv->notebook = NULL;
 
     gtk_container_foreach (GTK_CONTAINER (gam_app), (GtkCallback) gtk_widget_destroy, NULL);
 }
@@ -198,7 +164,6 @@ gam_app_constructor (GType                  type,
 {
     GObject *object;
     GamApp *gam_app;
-    GamAppPrivate *priv;
     GtkWidget *main_box, *mixer, *label;
     GError *error;
     snd_ctl_t *ctl_handle;
@@ -211,22 +176,20 @@ gam_app_constructor (GType                  type,
 
     gam_app = GAM_APP (object);
 
-    priv = GAM_APP_GET_PRIVATE (gam_app);
-
     g_signal_connect (G_OBJECT (gam_app), "delete_event",
                       G_CALLBACK (gam_app_delete), NULL);
 
     // Build the main menu and toolbar
-/*    gtk_action_group_add_actions (priv->main_action_group, action_entries,
+/*    gtk_action_group_add_actions (gam_app->priv->main_action_group, action_entries,
                                   G_N_ELEMENTS (action_entries), gam_app); */
 
-//    gtk_ui_manager_insert_action_group (priv->ui_manager, priv->main_action_group, 0);
+//    gtk_ui_manager_insert_action_group (gam_app->priv->ui_manager, gam_app->priv->main_action_group, 0);
 
     error = NULL;
 /*
-    g_signal_connect (G_OBJECT (priv->ui_manager), "connect_proxy",
+    g_signal_connect (G_OBJECT (gam_app->priv->ui_manager), "connect_proxy",
                       G_CALLBACK (gam_app_ui_connect_proxy_cb), gam_app);
-    g_signal_connect (G_OBJECT (priv->ui_manager), "disconnect_proxy",
+    g_signal_connect (G_OBJECT (gam_app->priv->ui_manager), "disconnect_proxy",
                       G_CALLBACK (gam_app_ui_disconnect_proxy_cb), gam_app);
 */
     do {
@@ -251,28 +214,28 @@ gam_app_constructor (GType                  type,
             label = gtk_label_new (gam_mixer_get_display_name (GAM_MIXER (mixer)));
             gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_LEFT);
 
-            gtk_notebook_append_page (GTK_NOTEBOOK (priv->notebook), mixer, label);
+            gtk_notebook_append_page (GTK_NOTEBOOK (gam_app->priv->notebook), mixer, label);
         }
 
         g_free (card);
     } while (result == 0);
 
-    priv->num_cards = index - 1;
+    gam_app->priv->num_cards = index - 1;
 
     // Pack widgets into window
     main_box = gtk_vbox_new (FALSE, 0);
 
     gtk_container_add (GTK_CONTAINER (gam_app), main_box);
-/*    gtk_box_pack_start (GTK_BOX (main_box), gtk_ui_manager_get_widget (priv->ui_manager, "/MainMenu"),
+/*    gtk_box_pack_start (GTK_BOX (main_box), gtk_ui_manager_get_widget (gam_app->priv->ui_manager, "/MainMenu"),
                         FALSE, FALSE, 0);
-    gtk_box_pack_end (GTK_BOX (main_box), priv->status_bar,
+    gtk_box_pack_end (GTK_BOX (main_box), gam_app->priv->status_bar,
                       FALSE, FALSE, 0); */
 
     gtk_widget_show_all (GTK_WIDGET (main_box));
 
-    gtk_box_pack_start (GTK_BOX (main_box), priv->notebook, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (main_box), gam_app->priv->notebook, TRUE, TRUE, 0);
 
-    gtk_widget_show (priv->notebook);
+    gtk_widget_show (gam_app->priv->notebook);
 
     gam_app_load_prefs (gam_app);
 
@@ -282,12 +245,9 @@ gam_app_constructor (GType                  type,
 static void
 gam_app_load_prefs (GamApp *gam_app)
 {
-    GamAppPrivate *priv;
     gint height, width;
 
     g_return_if_fail (GAM_IS_APP (gam_app));
-
-    priv = GAM_APP_GET_PRIVATE (gam_app);
 
     if ((height != 0) && (width != 0))
         gtk_window_resize (GTK_WINDOW (gam_app), width, height);
@@ -298,12 +258,9 @@ gam_app_load_prefs (GamApp *gam_app)
 static void
 gam_app_save_prefs (GamApp *gam_app)
 {
-    GamAppPrivate *priv;
     gint height, width;
 
     g_return_if_fail (GAM_IS_APP (gam_app));
-
-    priv = GAM_APP_GET_PRIVATE (gam_app);
 
     gdk_window_get_geometry (GDK_WINDOW (GTK_WIDGET (gam_app)->window), NULL, NULL, &width, &height, NULL);
 
@@ -312,15 +269,12 @@ gam_app_save_prefs (GamApp *gam_app)
 static GamMixer *
 gam_app_get_current_mixer (GamApp *gam_app)
 {
-    GamAppPrivate *priv;
     GtkWidget *mixer;
 
     g_return_val_if_fail (GAM_IS_APP (gam_app), NULL);
 
-    priv = GAM_APP_GET_PRIVATE (gam_app);
-
-    mixer = gtk_notebook_get_nth_page (GTK_NOTEBOOK (priv->notebook),
-              gtk_notebook_get_current_page (GTK_NOTEBOOK (priv->notebook)));
+    mixer = gtk_notebook_get_nth_page (GTK_NOTEBOOK (gam_app->priv->notebook),
+              gtk_notebook_get_current_page (GTK_NOTEBOOK (gam_app->priv->notebook)));
 
     return (GAM_MIXER (mixer));
 }
@@ -377,14 +331,10 @@ gam_app_properties_cb (GtkMenuItem *menuitem, GamApp *gam_app)
 static void
 gam_app_mixer_display_name_changed_cb (GamMixer *gam_mixer, GamApp *gam_app)
 {
-    GamAppPrivate *priv;
-
     g_return_if_fail (GAM_IS_APP (gam_app));
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
 
-    priv = GAM_APP_GET_PRIVATE (gam_app);
-
-    gtk_notebook_set_tab_label_text (GTK_NOTEBOOK (priv->notebook),
+    gtk_notebook_set_tab_label_text (GTK_NOTEBOOK (gam_app->priv->notebook),
                                      GTK_WIDGET (gam_mixer),
                                      gam_mixer_get_display_name (gam_mixer));
 }
@@ -401,13 +351,10 @@ gam_app_mixer_visibility_changed_cb (GamMixer *gam_mixer, GamApp *gam_app)
 static void
 gam_app_menu_item_select_cb (GtkMenuItem *proxy, GamApp *gam_app)
 {
-    GamAppPrivate *priv;
     GtkAction *action;
     gchar *message;
 
 /*    g_return_if_fail (GAM_IS_APP (gam_app));
-
-    priv = GAM_APP_GET_PRIVATE (gam_app);
 
     action = g_object_get_data (G_OBJECT (proxy),  "gtk-action");
 
@@ -416,8 +363,8 @@ gam_app_menu_item_select_cb (GtkMenuItem *proxy, GamApp *gam_app)
     g_object_get (G_OBJECT (action), "tooltip", &message, NULL);
 
     if (message) {
-        gtk_statusbar_push (GTK_STATUSBAR (priv->status_bar),
-                            priv->tip_message_cid,
+        gtk_statusbar_push (GTK_STATUSBAR (gam_app->priv->status_bar),
+                            gam_app->priv->tip_message_cid,
                             message);
         g_free (message);
     } */
@@ -426,14 +373,10 @@ gam_app_menu_item_select_cb (GtkMenuItem *proxy, GamApp *gam_app)
 static void
 gam_app_menu_item_deselect_cb (GtkMenuItem *proxy, GamApp *gam_app)
 {
-    GamAppPrivate *priv;
-
     g_return_if_fail (GAM_IS_APP (gam_app));
 
-    priv = GAM_APP_GET_PRIVATE (gam_app);
-
-/*    gtk_statusbar_pop (GTK_STATUSBAR (priv->status_bar),
-                       priv->tip_message_cid); */
+/*    gtk_statusbar_pop (GTK_STATUSBAR (gam_app->priv->status_bar),
+                       gam_app->priv->tip_message_cid); */
 }
 
 static void
@@ -479,28 +422,20 @@ gam_app_run (GamApp *gam_app)
 gint
 gam_app_get_num_cards (GamApp *gam_app)
 {
-    GamAppPrivate *priv;
-
     g_return_val_if_fail (GAM_IS_APP (gam_app), 0);
 
-    priv = GAM_APP_GET_PRIVATE (gam_app);
-
-    return priv->num_cards;
+    return gam_app->priv->num_cards;
 }
 
 GamMixer *
 gam_app_get_mixer (GamApp *gam_app, gint index)
 {
-    GamAppPrivate *priv;
     GtkWidget *mixer;
 
     g_return_val_if_fail (GAM_IS_APP (gam_app), NULL);
+    g_return_val_if_fail ((index >= 0) && (index <= gam_app->priv->num_cards), NULL);
 
-    priv = GAM_APP_GET_PRIVATE (gam_app);
-
-    g_return_val_if_fail ((index >= 0) && (index <= priv->num_cards), NULL);
-
-    mixer = gtk_notebook_get_nth_page (GTK_NOTEBOOK (priv->notebook), index);
+    mixer = gtk_notebook_get_nth_page (GTK_NOTEBOOK (gam_app->priv->notebook), index);
 
     return GAM_MIXER (mixer);
 }

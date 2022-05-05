@@ -34,12 +34,15 @@ G_BEGIN_DECLS
 #define GAM_IS_APP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GAM_TYPE_APP))
 #define GAM_APP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), GAM_TYPE_APP, GamAppClass))
 
+typedef struct _GamAppPrivate GamAppPrivate;
 typedef struct _GamApp GamApp;
 typedef struct _GamAppClass GamAppClass;
 
 struct _GamApp
 {
     GtkWindow app;
+
+    GamAppPrivate *priv;
 };
 
 struct _GamAppClass
