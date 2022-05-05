@@ -36,7 +36,6 @@ struct _GamSliderPanPrivate
     GtkObject *vol_adjustment;
 };
 
-static void     gam_slider_pan_class_init              (GamSliderPanClass     *klass);
 static void     gam_slider_pan_finalize                (GObject               *object);
 static GObject *gam_slider_pan_constructor             (GType                  type,
                                                         guint                  n_construct_properties,

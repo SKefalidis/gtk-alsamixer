@@ -50,11 +50,11 @@ struct _GamAppClass
     GtkWindowClass parent_class;
 };
 
-GType        gam_app_get_type                (void) G_GNUC_CONST;
-GtkWidget   *gam_app_new                     (void);
-void         gam_app_run                     (GamApp *gam_app);
-gint gam_app_get_mixer_slider_style ();
-gint gam_app_get_slider_toggle_style ();
+GType       gam_app_get_type                (void) G_GNUC_CONST;
+GtkWidget  *gam_app_new                     (void);
+void        gam_app_run                     (GamApp *gam_app);
+gint        gam_app_get_mixer_slider_style  (void);
+gint        gam_app_get_slider_toggle_style (void);
 
 G_END_DECLS
 

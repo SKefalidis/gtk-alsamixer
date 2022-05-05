@@ -55,7 +55,6 @@ struct _GamSliderPrivate
     GtkWidget        *capture_button;
 };
 
-static void     gam_slider_class_init                (GamSliderClass        *klass);
 static void     gam_slider_finalize                  (GObject               *object);
 static GObject *gam_slider_constructor               (GType                  type,
                                                       guint                  n_construct_properties,
@@ -403,7 +402,7 @@ gam_slider_get_config_name (GamSlider *gam_slider)
 gchar *
 gam_slider_get_display_name (GamSlider *gam_slider)
 {
-    gchar *key, *name, *disp_name;
+    gchar *name, *disp_name;
 
     g_return_val_if_fail (GAM_IS_SLIDER (gam_slider), NULL);
 
@@ -420,8 +419,6 @@ gam_slider_get_display_name (GamSlider *gam_slider)
 void
 gam_slider_set_display_name (GamSlider *gam_slider, const gchar *name)
 {
-    gchar *key;
-
     g_return_if_fail (GAM_IS_SLIDER (gam_slider));
 
     gtk_label_set_text_with_mnemonic (GTK_LABEL (gam_slider->priv->label), name);
@@ -430,7 +427,6 @@ gam_slider_set_display_name (GamSlider *gam_slider, const gchar *name)
 gboolean
 gam_slider_get_visible (GamSlider *gam_slider)
 {
-    gchar *key;
     gboolean visible = TRUE;
 
     g_return_val_if_fail (GAM_IS_SLIDER (gam_slider), TRUE);
@@ -441,8 +437,6 @@ gam_slider_get_visible (GamSlider *gam_slider)
 void
 gam_slider_set_visible (GamSlider *gam_slider, gboolean visible)
 {
-    gchar *key;
-
     g_return_if_fail (GAM_IS_SLIDER (gam_slider));
 
     if (visible)

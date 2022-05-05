@@ -69,7 +69,6 @@ struct _GamMixerPrivate
     gchar        *mixer_name_config;
 };
 
-static void     gam_mixer_class_init         (GamMixerClass         *klass);
 static void     gam_mixer_finalize           (GObject               *object);
 static GObject *gam_mixer_constructor        (GType                  type,
                                               guint                  n_construct_properties,
@@ -355,7 +354,7 @@ gam_mixer_get_property (GObject    *object,
 static void
 gam_mixer_construct_elements (GamMixer *gam_mixer)
 {
-    GtkWidget *toggle, *vbox;
+    GtkWidget *toggle, *vbox = NULL;
     snd_mixer_elem_t *elem;
     gint i = 0;
 
@@ -418,19 +417,14 @@ gam_mixer_get_config_name (GamMixer *gam_mixer)
 gchar *
 gam_mixer_get_display_name (GamMixer *gam_mixer)
 {
-    gchar *key, *name;
-
     g_return_val_if_fail (GAM_IS_MIXER (gam_mixer), NULL);
 
-//    return name == NULL ? g_strdup (gam_mixer_get_mixer_name (gam_mixer)) : name;
     return g_strdup (gam_mixer_get_mixer_name (gam_mixer));
 }
 
 void
 gam_mixer_set_display_name (GamMixer *gam_mixer, const gchar *name)
 {
-    gchar *key;
-
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
 
     g_signal_emit (G_OBJECT (gam_mixer), signals[DISPLAY_NAME_CHANGED], 0);
@@ -439,7 +433,6 @@ gam_mixer_set_display_name (GamMixer *gam_mixer, const gchar *name)
 gboolean
 gam_mixer_get_visible (GamMixer *gam_mixer)
 {
-    gchar *key;
     gboolean visible = TRUE;
 
     g_return_val_if_fail (GAM_IS_MIXER (gam_mixer), TRUE);
@@ -450,8 +443,6 @@ gam_mixer_get_visible (GamMixer *gam_mixer)
 void
 gam_mixer_set_visible (GamMixer *gam_mixer, gboolean visible)
 {
-    gchar *key;
-
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
 
     g_signal_emit (G_OBJECT (gam_mixer), signals[VISIBILITY_CHANGED], 0);
@@ -479,13 +470,6 @@ gam_mixer_show_props_dialog (GamMixer *gam_mixer)
 
         return;
     }
-
-/*    dialog = gam_props_dlg_new (GTK_WINDOW (gam_mixer->priv->app), gam_mixer);
-
-    g_signal_connect (G_OBJECT (dialog), "destroy",
-                      G_CALLBACK (gtk_widget_destroyed), &dialog);
-
-    gtk_widget_show (dialog); */
 }
 
 gint

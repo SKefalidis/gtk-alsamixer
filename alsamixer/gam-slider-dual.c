@@ -40,7 +40,6 @@ struct _GamSliderDualPrivate
     gboolean   refreshing;
 };
 
-static void     gam_slider_dual_class_init                    (GamSliderDualClass    *klass);
 static void     gam_slider_dual_finalize                      (GObject               *object);
 static GObject *gam_slider_dual_constructor                   (GType                  type,
                                                                guint                  n_construct_properties,

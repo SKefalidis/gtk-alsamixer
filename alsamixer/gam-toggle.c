@@ -41,7 +41,6 @@ struct _GamTogglePrivate
     gchar            *name_config;
 };
 
-static void     gam_toggle_class_init   (GamToggleClass        *klass);
 static void     gam_toggle_finalize     (GObject               *object);
 static GObject *gam_toggle_constructor  (GType                  type,
                                          guint                  n_construct_properties,
@@ -246,14 +245,6 @@ gam_toggle_new (gpointer elem, GamMixer *gam_mixer, GamApp *gam_app)
                          NULL);
 }
 
-snd_mixer_elem_t *
-gam_toggle_get_elem (GamToggle *gam_toggle)
-{
-    g_return_val_if_fail (GAM_IS_TOGGLE (gam_toggle), NULL);
-
-    return gam_toggle->priv->elem;
-}
-
 void
 gam_toggle_set_elem (GamToggle *gam_toggle, snd_mixer_elem_t *elem)
 {
@@ -336,19 +327,14 @@ gam_toggle_get_config_name (GamToggle *gam_toggle)
 gchar *
 gam_toggle_get_display_name (GamToggle *gam_toggle)
 {
-    gchar *key, *name;
-
     g_return_val_if_fail (GAM_IS_TOGGLE (gam_toggle), NULL);
-
-//    return name == NULL ? g_strdup (gam_toggle_get_name (gam_toggle)) : name;
+;
 	return g_strdup (gam_toggle_get_name (gam_toggle));
 }
 
 void
 gam_toggle_set_display_name (GamToggle *gam_toggle, const gchar *name)
 {
-    gchar *key;
-
     g_return_if_fail (GAM_IS_TOGGLE (gam_toggle));
 
     gtk_button_set_label (GTK_BUTTON (gam_toggle), name);
@@ -357,7 +343,6 @@ gam_toggle_set_display_name (GamToggle *gam_toggle, const gchar *name)
 gboolean
 gam_toggle_get_visible (GamToggle *gam_toggle)
 {
-    gchar *key;
     gboolean visible = TRUE;
 
     g_return_val_if_fail (GAM_IS_TOGGLE (gam_toggle), TRUE);
@@ -368,8 +353,6 @@ gam_toggle_get_visible (GamToggle *gam_toggle)
 void
 gam_toggle_set_visible (GamToggle *gam_toggle, gboolean visible)
 {
-    gchar *key;
-
     g_return_if_fail (GAM_IS_TOGGLE (gam_toggle));
 
     if (visible)

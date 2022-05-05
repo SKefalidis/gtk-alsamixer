@@ -35,7 +35,6 @@ struct _GamAppPrivate
     GtkWidget      *notebook;
 };
 
-static void      gam_app_class_init                    (GamAppClass           *klass);
 static gboolean  gam_app_delete                        (GtkWidget             *widget,
                                                         gpointer               user_data);
 static void      gam_app_destroy                       (GtkObject             *object);
@@ -108,8 +107,6 @@ gam_app_destroy (GtkObject *object)
     gtk_main_quit ();
 
     gam_app->priv->notebook = NULL;
-
-    gtk_container_foreach (GTK_CONTAINER (gam_app), (GtkCallback) gtk_widget_destroy, NULL);
 }
 
 static GObject *
@@ -180,7 +177,7 @@ gam_app_constructor (GType                  type,
 static void
 gam_app_load_prefs (GamApp *gam_app)
 {
-    gint height, width;
+    gint height = 0, width = 0;
 
     g_return_if_fail (GAM_IS_APP (gam_app));
 
@@ -237,13 +234,13 @@ gam_app_run (GamApp *gam_app)
 }
 
 gint
-gam_app_get_mixer_slider_style ()
+gam_app_get_mixer_slider_style (void)
 {
     return 0;
 }
 
 gint
-gam_app_get_slider_toggle_style ()
+gam_app_get_slider_toggle_style (void)
 {
     return 1;
 }
