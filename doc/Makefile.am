@@ -1,7 +1,7 @@
 # Based on Thunar's docs/Makefile.am
 
 man_MANS = \
-	xfce4-terminal.1
+	xfce4-alsamixer.1
 
 if MAINTAINER_MODE
 %.1: %.xml
@@ -10,6 +10,6 @@ endif
 
 EXTRA_DIST = \
 	$(man_MANS) \
-	xfce4-terminal.xml
+	xfce4-alsamixer.xml
 
 # vi:set ts=8 sw=8 noet ai softtabstop=0 syntax=automake:
