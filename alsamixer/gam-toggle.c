@@ -33,10 +33,6 @@ enum {
     PROP_APP
 };
 
-#define GAM_TOGGLE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GAM_TYPE_TOGGLE, GamTogglePrivate))
-
-typedef struct _GamTogglePrivate GamTogglePrivate;
-
 struct _GamTogglePrivate
 {
     snd_mixer_elem_t *elem;
@@ -46,7 +42,6 @@ struct _GamTogglePrivate
 };
 
 static void     gam_toggle_class_init   (GamToggleClass        *klass);
-static void     gam_toggle_init         (GamToggle             *gam_toggle);
 static void     gam_toggle_finalize     (GObject               *object);
 static GObject *gam_toggle_constructor  (GType                  type,
                                          guint                  n_construct_properties,
@@ -68,31 +63,8 @@ static gint     gam_toggle_refresh      (snd_mixer_elem_t      *elem,
 
 static gpointer parent_class;
 
-GType
-gam_toggle_get_type (void)
-{
-    static GType gam_toggle_type = 0;
-
-    if (!gam_toggle_type) {
-        static const GTypeInfo gam_toggle_info =
-        {
-            sizeof (GamToggleClass),
-            NULL,               /* base_init */
-            NULL,               /* base_finalize */
-            (GClassInitFunc) gam_toggle_class_init,
-            NULL,               /* class_finalize */
-            NULL,               /* class_data */
-            sizeof (GamToggle),
-            0,                  /* n_preallocs */
-            (GInstanceInitFunc) gam_toggle_init,
-        };
-
-        gam_toggle_type = g_type_register_static (GTK_TYPE_CHECK_BUTTON, "GamToggle",
-                                                  &gam_toggle_info, (GTypeFlags)0);
-    }
-
-    return gam_toggle_type;
-}
+G_DEFINE_TYPE_WITH_CODE (GamToggle, gam_toggle, GTK_TYPE_CHECK_BUTTON,
+                         G_ADD_PRIVATE (GamToggle))
 
 static void
 gam_toggle_class_init (GamToggleClass *klass)
@@ -126,45 +98,38 @@ gam_toggle_class_init (GamToggleClass *klass)
                                                            _("Main Application"),
                                                            _("Main Application"),
                                                            (GParamFlags) (G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
-
-    g_type_class_add_private (gobject_class, sizeof (GamTogglePrivate));
 }
 
 static void
 gam_toggle_init (GamToggle *gam_toggle)
 {
-    GamTogglePrivate *priv;
-
     g_return_if_fail (GAM_IS_TOGGLE (gam_toggle));
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
+    gam_toggle->priv = gam_toggle_get_instance_private (gam_toggle);
 
-    priv->elem = NULL;
-    priv->name_config = NULL;
-    priv->app = NULL;
-    priv->mixer = NULL;
+    gam_toggle->priv->elem = NULL;
+    gam_toggle->priv->name_config = NULL;
+    gam_toggle->priv->app = NULL;
+    gam_toggle->priv->mixer = NULL;
 }
 
 static void
 gam_toggle_finalize (GObject *object)
 {
     GamToggle *gam_toggle;
-    GamTogglePrivate *priv;
 
     g_return_if_fail (GAM_IS_TOGGLE (object));
 
     gam_toggle = GAM_TOGGLE (object);
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
+    snd_mixer_elem_set_callback (gam_toggle->priv->elem, NULL);
 
-    snd_mixer_elem_set_callback (priv->elem, NULL);
+    g_free (gam_toggle->priv->name_config);
 
-    g_free (priv->name_config);
-
-    priv->name_config = NULL;
-    priv->elem = NULL;
-    priv->mixer = NULL;
-    priv->app = NULL;
+    gam_toggle->priv->name_config = NULL;
+    gam_toggle->priv->elem = NULL;
+    gam_toggle->priv->mixer = NULL;
+    gam_toggle->priv->app = NULL;
 
     G_OBJECT_CLASS (parent_class)->finalize (object);
 }
@@ -201,22 +166,19 @@ gam_toggle_set_property (GObject      *object,
                          GParamSpec   *pspec)
 {
     GamToggle *gam_toggle;
-    GamTogglePrivate *priv;
 
     gam_toggle = GAM_TOGGLE (object);
-
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
 
     switch (prop_id) {
         case PROP_ELEM:
             gam_toggle_set_elem (gam_toggle, g_value_get_pointer (value));
             break;
         case PROP_MIXER:
-            priv->mixer = g_value_get_pointer (value);
+            gam_toggle->priv->mixer = g_value_get_pointer (value);
             g_object_notify (G_OBJECT (gam_toggle), "mixer");
             break;
         case PROP_APP:
-            priv->app = g_value_get_pointer (value);
+            gam_toggle->priv->app = g_value_get_pointer (value);
             g_object_notify (G_OBJECT (gam_toggle), "app");
             break;
         default:
@@ -232,21 +194,18 @@ gam_toggle_get_property (GObject    *object,
                          GParamSpec *pspec)
 {
     GamToggle *gam_toggle;
-    GamTogglePrivate *priv;
 
     gam_toggle = GAM_TOGGLE (object);
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
     switch (prop_id) {
         case PROP_ELEM:
-            g_value_set_pointer (value, priv->elem);
+            g_value_set_pointer (value, gam_toggle->priv->elem);
             break;
         case PROP_MIXER:
-            g_value_set_pointer (value, priv->mixer);
+            g_value_set_pointer (value, gam_toggle->priv->mixer);
             break;
         case PROP_APP:
-            g_value_set_pointer (value, priv->app);
+            g_value_set_pointer (value, gam_toggle->priv->app);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -290,33 +249,25 @@ gam_toggle_new (gpointer elem, GamMixer *gam_mixer, GamApp *gam_app)
 snd_mixer_elem_t *
 gam_toggle_get_elem (GamToggle *gam_toggle)
 {
-    GamTogglePrivate *priv;
-
     g_return_val_if_fail (GAM_IS_TOGGLE (gam_toggle), NULL);
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
-    return priv->elem;
+    return gam_toggle->priv->elem;
 }
 
 void
 gam_toggle_set_elem (GamToggle *gam_toggle, snd_mixer_elem_t *elem)
 {
-    GamTogglePrivate *priv;
-
     g_return_if_fail (GAM_IS_TOGGLE (gam_toggle));
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
-    if (priv->elem)
-        snd_mixer_elem_set_callback (priv->elem, NULL);
+    if (gam_toggle->priv->elem)
+        snd_mixer_elem_set_callback (gam_toggle->priv->elem, NULL);
 
     if (elem) {
         snd_mixer_elem_set_callback_private (elem, gam_toggle);
         snd_mixer_elem_set_callback (elem, gam_toggle_refresh);
     }
 
-    priv->elem = elem;
+    gam_toggle->priv->elem = elem;
 
     g_object_notify (G_OBJECT (gam_toggle), "elem");
 }
@@ -324,18 +275,15 @@ gam_toggle_set_elem (GamToggle *gam_toggle, snd_mixer_elem_t *elem)
 gboolean
 gam_toggle_get_state (GamToggle *gam_toggle)
 {
-    GamTogglePrivate *priv;
     gint value = 0;
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
-    if (snd_mixer_selem_has_playback_switch (priv->elem)) {
-        snd_mixer_selem_get_playback_switch (priv->elem, 0, &value);
-    } else if (snd_mixer_selem_has_capture_switch (priv->elem)) {
-        snd_mixer_selem_get_capture_switch (priv->elem, 0, &value);
+    if (snd_mixer_selem_has_playback_switch (gam_toggle->priv->elem)) {
+        snd_mixer_selem_get_playback_switch (gam_toggle->priv->elem, 0, &value);
+    } else if (snd_mixer_selem_has_capture_switch (gam_toggle->priv->elem)) {
+        snd_mixer_selem_get_capture_switch (gam_toggle->priv->elem, 0, &value);
     } else {
         g_warning ("%s (). No idea what to do for mixer element \"%s\"!",
-                   __FUNCTION__, snd_mixer_selem_get_name (priv->elem));
+                   __FUNCTION__, snd_mixer_selem_get_name (gam_toggle->priv->elem));
     }
 
     return value;
@@ -344,21 +292,18 @@ gam_toggle_get_state (GamToggle *gam_toggle)
 void
 gam_toggle_set_state (GamToggle *gam_toggle, gboolean state)
 {
-    GamTogglePrivate *priv;
     const gboolean internal_state = gam_toggle_get_state (gam_toggle);
     int err;
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
     if (state == internal_state) return;
 
-    if (snd_mixer_selem_has_playback_switch (priv->elem)) {
-        err = snd_mixer_selem_set_playback_switch_all (priv->elem, state);
-    } else if (snd_mixer_selem_has_capture_switch (priv->elem)) {
-        err = snd_mixer_selem_set_capture_switch_all (priv->elem, state);
+    if (snd_mixer_selem_has_playback_switch (gam_toggle->priv->elem)) {
+        err = snd_mixer_selem_set_playback_switch_all (gam_toggle->priv->elem, state);
+    } else if (snd_mixer_selem_has_capture_switch (gam_toggle->priv->elem)) {
+        err = snd_mixer_selem_set_capture_switch_all (gam_toggle->priv->elem, state);
     } else {
         g_warning ("%s (). No idea what to do for mixer element \"%s\"!",
-                   __FUNCTION__, snd_mixer_selem_get_name (priv->elem));
+                   __FUNCTION__, snd_mixer_selem_get_name (gam_toggle->priv->elem));
         err = 0;
     }
 
@@ -370,41 +315,30 @@ gam_toggle_set_state (GamToggle *gam_toggle, gboolean state)
 const gchar *
 gam_toggle_get_name (GamToggle *gam_toggle)
 {
-    GamTogglePrivate *priv;
-
     g_return_val_if_fail (GAM_IS_TOGGLE (gam_toggle), NULL);
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
-    return snd_mixer_selem_get_name (priv->elem);
+    return snd_mixer_selem_get_name (gam_toggle->priv->elem);
 }
 
 const gchar *
 gam_toggle_get_config_name (GamToggle *gam_toggle)
 {
-    GamTogglePrivate *priv;
-
     g_return_val_if_fail (GAM_IS_TOGGLE (gam_toggle), NULL);
 
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
-//    if (priv->name_config == NULL) {
-        priv->name_config = g_strdup (gam_toggle_get_name (gam_toggle));
-        priv->name_config = g_strdelimit (priv->name_config, GAM_CONFIG_DELIMITERS, '_');
+//    if (gam_toggle->priv->name_config == NULL) {
+        gam_toggle->priv->name_config = g_strdup (gam_toggle_get_name (gam_toggle));
+        gam_toggle->priv->name_config = g_strdelimit (gam_toggle->priv->name_config, GAM_CONFIG_DELIMITERS, '_');
 //    }
 
-    return priv->name_config;
+    return gam_toggle->priv->name_config;
 }
 
 gchar *
 gam_toggle_get_display_name (GamToggle *gam_toggle)
 {
-    GamTogglePrivate *priv;
     gchar *key, *name;
 
     g_return_val_if_fail (GAM_IS_TOGGLE (gam_toggle), NULL);
-
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
 
 //    return name == NULL ? g_strdup (gam_toggle_get_name (gam_toggle)) : name;
 	return g_strdup (gam_toggle_get_name (gam_toggle));
@@ -413,12 +347,9 @@ gam_toggle_get_display_name (GamToggle *gam_toggle)
 void
 gam_toggle_set_display_name (GamToggle *gam_toggle, const gchar *name)
 {
-    GamTogglePrivate *priv;
     gchar *key;
 
     g_return_if_fail (GAM_IS_TOGGLE (gam_toggle));
-
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
 
     gtk_button_set_label (GTK_BUTTON (gam_toggle), name);
 }
@@ -426,14 +357,10 @@ gam_toggle_set_display_name (GamToggle *gam_toggle, const gchar *name)
 gboolean
 gam_toggle_get_visible (GamToggle *gam_toggle)
 {
-    GamTogglePrivate *priv;
     gchar *key;
     gboolean visible = TRUE;
 
     g_return_val_if_fail (GAM_IS_TOGGLE (gam_toggle), TRUE);
-
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
 
     return visible;
 }
@@ -441,13 +368,9 @@ gam_toggle_get_visible (GamToggle *gam_toggle)
 void
 gam_toggle_set_visible (GamToggle *gam_toggle, gboolean visible)
 {
-    GamTogglePrivate *priv;
     gchar *key;
 
     g_return_if_fail (GAM_IS_TOGGLE (gam_toggle));
-
-    priv = GAM_TOGGLE_GET_PRIVATE (gam_toggle);
-
 
     if (visible)
         gtk_widget_show (GTK_WIDGET (gam_toggle));

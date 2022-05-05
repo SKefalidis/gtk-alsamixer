@@ -33,12 +33,15 @@ G_BEGIN_DECLS
 #define GAM_IS_TOGGLE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GAM_TYPE_TOGGLE))
 #define gam_toggle_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), GAM_TYPE_TOGGLE, GamToggleClass))
 
+typedef struct _GamTogglePrivate GamTogglePrivate;
 typedef struct _GamToggle GamToggle;
 typedef struct _GamToggleClass GamToggleClass;
 
 struct _GamToggle
 {
     GtkCheckButton parent_instance;
+
+    GamTogglePrivate *priv;
 };
 
 struct _GamToggleClass
