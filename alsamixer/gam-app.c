@@ -222,7 +222,7 @@ GtkWidget *
 gam_app_new (void)
 {
     return g_object_new (GAM_TYPE_APP,
-                         "title", _("GTK ALSA Mixer"),
+                         "title", _("Xfce ALSA Mixer"),
                          NULL);
 }
 
