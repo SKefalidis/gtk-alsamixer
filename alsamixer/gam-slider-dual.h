@@ -32,12 +32,15 @@ G_BEGIN_DECLS
 #define GAM_IS_SLIDER_DUAL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GAM_TYPE_SLIDER_DUAL))
 #define GAM_SLIDER_DUAL_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), GAM_TYPE_SLIDER_DUAL, GamSliderDualClass))
 
+typedef struct _GamSliderDualPrivate GamSliderDualPrivate;
 typedef struct _GamSliderDual GamSliderDual;
 typedef struct _GamSliderDualClass GamSliderDualClass;
 
 struct _GamSliderDual
 {
     GamSlider parent_instance;
+
+    GamSliderDualPrivate *priv;
 };
 
 struct _GamSliderDualClass
