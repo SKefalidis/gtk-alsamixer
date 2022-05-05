@@ -21,7 +21,7 @@
 #ifndef __GAM_MIXER_H__
 #define __GAM_MIXER_H__
 
-#include <asoundlib.h>
+#include <alsa/asoundlib.h>
 #include <gtk/gtkvbox.h>
 #include <gtk/gtksizegroup.h>
 

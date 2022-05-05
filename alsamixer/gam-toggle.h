@@ -21,7 +21,7 @@
 #ifndef __GAM_TOGGLE_H__
 #define __GAM_TOGGLE_H__
 
-#include <asoundlib.h>
+#include <alsa/asoundlib.h>
 #include <gtk/gtkcheckbutton.h>
 
 G_BEGIN_DECLS

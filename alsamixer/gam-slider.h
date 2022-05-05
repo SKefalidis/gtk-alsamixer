@@ -21,7 +21,7 @@
 #ifndef __GAM_SLIDER_H__
 #define __GAM_SLIDER_H__
 
-#include <asoundlib.h>
+#include <alsa/asoundlib.h>
 #include <gtk/gtkhbox.h>
 #include <gtk/gtksizegroup.h>
 #include <gtk/gtklabel.h>
