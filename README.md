@@ -1,4 +1,4 @@
-gtk-alsamixer
+Xfce Alsamixer
 =============
 
-gtk alsa mixer app...
+Xfce Alsamixer is a WIP port of gtk-alsamixer to GTK 3.
