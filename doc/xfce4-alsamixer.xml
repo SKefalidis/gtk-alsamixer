@@ -2,10 +2,10 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5/EN"
     "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
   <!ENTITY date "December 2009">
-  <!ENTITY application "xfce4-terminal">
+  <!ENTITY application "xfce4-alsamixer">
 ]>
 
-<refentry id="terminal" lang="en">
+<refentry id="alsamixer" lang="en">
   <refentryinfo>
     <productname>&application;</productname>
     <authorgroup>
