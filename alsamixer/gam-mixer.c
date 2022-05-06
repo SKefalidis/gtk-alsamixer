@@ -363,23 +363,27 @@ gam_mixer_construct_elements (GamMixer *gam_mixer)
 
     for (elem = snd_mixer_first_elem (gam_mixer->priv->handle); elem; elem = snd_mixer_elem_next (elem)) {
         if (snd_mixer_selem_is_active (elem)) {
-            /* if element is a switch */
-            if (!(snd_mixer_selem_has_playback_volume (elem) || snd_mixer_selem_has_capture_volume (elem))) {
-                if (i % 5 == 0) {
-                    vbox = gtk_vbox_new (FALSE, 0);
-                    gtk_box_pack_start (GTK_BOX (gam_mixer->priv->toggle_box),
-                                        vbox, TRUE, TRUE, 0);
-                    gtk_widget_show (vbox);
+            if (snd_mixer_selem_is_enumerated (elem) == FALSE) {
+                /* if element is a switch */
+                if (!(snd_mixer_selem_has_playback_volume (elem) || snd_mixer_selem_has_capture_volume (elem))) {
+                    if (i % 5 == 0) {
+                        vbox = gtk_vbox_new (FALSE, 0);
+                        gtk_box_pack_start (GTK_BOX (gam_mixer->priv->toggle_box),
+                                            vbox, TRUE, TRUE, 0);
+                        gtk_widget_show (vbox);
+                    }
+
+                    toggle = gam_toggle_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
+                    gtk_box_pack_start (GTK_BOX (vbox),
+                                        toggle, FALSE, FALSE, 0);
+                    if (gam_toggle_get_visible (GAM_TOGGLE (toggle)))
+                        gtk_widget_show (toggle);
+                    gam_mixer->priv->toggles = g_slist_append (gam_mixer->priv->toggles, toggle);
+
+                    i++;
                 }
-
-                toggle = gam_toggle_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
-                gtk_box_pack_start (GTK_BOX (vbox),
-                                    toggle, FALSE, FALSE, 0);
-                if (gam_toggle_get_visible (GAM_TOGGLE (toggle)))
-                    gtk_widget_show (toggle);
-                gam_mixer->priv->toggles = g_slist_append (gam_mixer->priv->toggles, toggle);
-
-                i++;
+            } else {
+                // TODO: enumerated controls
             }
         }
     }
