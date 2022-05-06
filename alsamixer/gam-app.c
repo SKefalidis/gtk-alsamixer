@@ -184,7 +184,7 @@ gam_app_load_prefs (GamApp *gam_app)
     if ((height != 0) && (width != 0))
         gtk_window_resize (GTK_WINDOW (gam_app), width, height);
     else /* This is really pedantic, since it is very unlikely to ever happen */
-        gtk_window_set_default_size (GTK_WINDOW (gam_app), 480, 350);
+        gtk_window_set_default_size (GTK_WINDOW (gam_app), 800, 400);
 }
 
 static void
