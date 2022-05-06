@@ -511,12 +511,11 @@ gam_mixer_construct_sliders (GamMixer *gam_mixer)
 {
     GtkWidget *slider;
     snd_mixer_elem_t *elem;
-    gint i;
 
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
 
     if (gam_mixer->priv->sliders) {
-        for (i = 0; i < g_slist_length (gam_mixer->priv->sliders); i++) {
+        for (guint i = 0; i < g_slist_length (gam_mixer->priv->sliders); i++) {
             slider = g_slist_nth_data (gam_mixer->priv->sliders, i);
             gtk_widget_hide (slider);
             gtk_container_remove (GTK_CONTAINER (gam_mixer->priv->slider_box), slider);
