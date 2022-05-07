@@ -187,14 +187,14 @@ gam_slider_pan_get_volume (GamSliderPan *gam_slider_pan)
         snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, &left_chn);
 
     if (snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        return rint (100 - (left_chn * (100 / (gfloat)pmax)));
+        return rint (left_chn * (100 / (gfloat)pmax));
     } else {
         if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
             snd_mixer_selem_get_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
         else
             snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
 
-        return rint (100 - (MAX(left_chn, right_chn) * (100 / (gfloat)pmax)));
+        return rint (MAX(left_chn, right_chn) * (100 / (gfloat)pmax));
     }
 }
 
@@ -221,7 +221,7 @@ gam_slider_pan_update_volume (GamSliderPan *gam_slider_pan)
     else
         pan_value = 0;
 
-    left_chn = right_chn = rint ((100 - vol_value) / (100 / (gfloat)pmax));
+    left_chn = right_chn = rint (vol_value / (100 / (gfloat)pmax));
 
     if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
         if (pan_value < 0) {
