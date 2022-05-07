@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,9 +23,9 @@
 #define __GAM_SLIDER_H__
 
 #include <alsa/asoundlib.h>
-#include <gtk/gtkhbox.h>
+#include <gtk/gtk.h>
 #include <gtk/gtksizegroup.h>
-#include <gtk/gtklabel.h>
+#include <alsamixer/gam-mixer.h>
 
 #undef ABS
 #define ABS(a)    (((a) < 0) ? -(a) : (a))
@@ -57,8 +58,6 @@ struct _GamSliderClass
 
     void (* refresh) (GamSlider *gam_slider);
 };
-
-#include "gam-mixer.h"
     
 GType                 gam_slider_get_type           (void) G_GNUC_CONST;
 const gchar *gam_slider_get_name           (GamSlider   *gam_slider);

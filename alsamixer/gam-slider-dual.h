@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +22,8 @@
 #ifndef __GAM_SLIDER_DUAL_H__
 #define __GAM_SLIDER_DUAL_H__
 
-#include "gam-slider.h"
+#include <alsamixer/gam-mixer.h>
+#include <alsamixer/gam-slider.h>
 
 G_BEGIN_DECLS
 
@@ -47,8 +49,6 @@ struct _GamSliderDualClass
 {
     GamSliderClass parent_class;
 };
-
-#include "gam-mixer.h"
 
 GType      gam_slider_dual_get_type        (void) G_GNUC_CONST;
 GtkWidget *gam_slider_dual_new             (gpointer      elem,

@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,8 +23,6 @@
 #include <config.h>
 #endif
 
-#include <gtk/gtklabel.h>
-#include <gtk/gtknotebook.h>
 #include <glib/gi18n.h>
 
 #include "gam-app.h"
@@ -37,12 +36,12 @@ struct _GamAppPrivate
 
 static gboolean  gam_app_delete                        (GtkWidget             *widget,
                                                         gpointer               user_data);
-static void      gam_app_destroy                       (GtkObject             *object);
+static void      gam_app_destroy                       (GtkWidget             *widget);
 static GObject  *gam_app_constructor                   (GType                  type,
                                                         guint                  n_construct_properties,
                                                         GObjectConstructParam *construct_params);
-static void      gam_app_load_prefs                    (GamApp                *gam_app);
-static void      gam_app_save_prefs                    (GamApp                *gam_app);
+//static void      gam_app_load_prefs                    (GamApp                *gam_app);
+//static void      gam_app_save_prefs                    (GamApp                *gam_app);
 static void      gam_app_mixer_display_name_changed_cb (GamMixer              *gam_mixer,
                                                         GamApp                *gam_app);
 static void gam_app_mixer_visibility_changed_cb (GamMixer *gam_mixer);
@@ -55,17 +54,17 @@ G_DEFINE_TYPE_WITH_CODE (GamApp , gam_app, GTK_TYPE_WINDOW,
 static void
 gam_app_class_init (GamAppClass *klass)
 {
-    GObjectClass *gobject_class;
-    GtkObjectClass *object_class;
+    GObjectClass   *gobject_class;
+    GtkWidgetClass *widget_class;
 
     gobject_class = G_OBJECT_CLASS (klass);
-    object_class = GTK_OBJECT_CLASS (klass);
+    widget_class = GTK_WIDGET_CLASS (klass);
 
     parent_class = g_type_class_peek_parent (klass);
 
     gobject_class->constructor = gam_app_constructor;
 
-    object_class->destroy = gam_app_destroy;
+    widget_class->destroy = gam_app_destroy;
 }
 
 static void
@@ -89,20 +88,20 @@ gam_app_delete (GtkWidget *widget, gpointer user_data)
 
     gam_app = GAM_APP (widget);
 
-    gam_app_save_prefs (gam_app);
+//    gam_app_save_prefs (gam_app);
 
     return FALSE;
 }
 
 static void
-gam_app_destroy (GtkObject *object)
+gam_app_destroy (GtkWidget *widget)
 {
     GamApp *gam_app;
 
-    g_return_if_fail (object != NULL);
-    g_return_if_fail (GAM_IS_APP (object));
+    g_return_if_fail (widget != NULL);
+    g_return_if_fail (GAM_IS_APP (widget));
 
-    gam_app = GAM_APP (object);
+    gam_app = GAM_APP (widget);
 
     gtk_main_quit ();
 
@@ -126,6 +125,8 @@ gam_app_constructor (GType                  type,
                                                              construct_params);
 
     gam_app = GAM_APP (object);
+
+    gtk_window_set_default_size (GTK_WINDOW (gam_app), 800, 400);
 
     g_signal_connect (G_OBJECT (gam_app), "delete_event",
                       G_CALLBACK (gam_app_delete), NULL);
@@ -169,34 +170,31 @@ gam_app_constructor (GType                  type,
 
     gtk_widget_show (gam_app->priv->notebook);
 
-    gam_app_load_prefs (gam_app);
+//    gam_app_load_prefs (gam_app);
 
     return object;
 }
 
-static void
-gam_app_load_prefs (GamApp *gam_app)
-{
-    gint height = 0, width = 0;
-
-    g_return_if_fail (GAM_IS_APP (gam_app));
-
-    if ((height != 0) && (width != 0))
-        gtk_window_resize (GTK_WINDOW (gam_app), width, height);
-    else /* This is really pedantic, since it is very unlikely to ever happen */
-        gtk_window_set_default_size (GTK_WINDOW (gam_app), 800, 400);
-}
-
-static void
-gam_app_save_prefs (GamApp *gam_app)
-{
-    gint height, width;
-
-    g_return_if_fail (GAM_IS_APP (gam_app));
-
-    gdk_window_get_geometry (GDK_WINDOW (GTK_WIDGET (gam_app)->window), NULL, NULL, &width, &height, NULL);
-
-}
+//static void
+//gam_app_load_prefs (GamApp *gam_app)
+//{
+//    gint height = 0, width = 0;
+//
+//    g_return_if_fail (GAM_IS_APP (gam_app));
+//
+//    if ((height != 0) && (width != 0))
+//        gtk_window_resize (GTK_WINDOW (gam_app), width, height);
+//}
+//
+//static void
+//gam_app_save_prefs (GamApp *gam_app)
+//{
+//    gint height, width;
+//
+//    g_return_if_fail (GAM_IS_APP (gam_app));
+//
+//    gdk_window_get_geometry (GDK_WINDOW (gam_app), NULL, NULL, &width, &height);
+//}
 
 static void
 gam_app_mixer_display_name_changed_cb (GamMixer *gam_mixer, GamApp *gam_app)

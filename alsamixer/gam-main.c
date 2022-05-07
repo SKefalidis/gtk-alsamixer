@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,35 +32,24 @@ int
 main (int argc, char *argv[])
 {
     GtkWidget *app;
-    GError        *error;
-//    GnomeProgram *prog;
+    GError    *error;
 
 #ifdef ENABLE_NLS
     bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
     bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
     textdomain (GETTEXT_PACKAGE);
 #endif
-/*
-    prog = gtk_program_init (PACKAGE, VERSION, LIBGTKUI_MODULE,
-                               argc, argv,
-                               GTK_PARAM_HUMAN_READABLE_NAME, _("GTK ALSA Mixer"),
-                               GTK_PARAM_APP_DATADIR, PACKAGE_DATA_DIR,
-                               NULL);
-
-    if (!prog)
-        return 1; */
-
-	    if (!gtk_init_with_args (&argc, &argv, 
- 		            "alsamixer", 
- 		            NULL, 
- 		            NULL, 
- 		            &error)) 
- 		    { 
- 		        g_printerr(_("%s\nRun '%s --help' to see a full list of available command line options.\n"), 
- 		                   _("Error: could not initialize graphical user interface and option add_price_quotes was not set."), 
- 		                   argv[0]); 
- 		        return 1; 
- 		    } 
+    if (!gtk_init_with_args (&argc, &argv,
+                "alsamixer",
+                NULL,
+                NULL,
+                &error))
+    {
+        g_printerr(_("%s\nRun '%s --help' to see a full list of available command line options.\n"),
+                   _("Error: could not initialize graphical user interface and option add_price_quotes was not set."),
+                   argv[0]);
+        return 1;
+    }
  
     app = gam_app_new ();
 
