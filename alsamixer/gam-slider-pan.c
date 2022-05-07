@@ -276,8 +276,14 @@ gam_slider_pan_refresh (GamSlider *gam_slider)
 {
     GamSliderPan * const gam_slider_pan = GAM_SLIDER_PAN (snd_mixer_elem_get_callback_private (gam_slider_get_elem (gam_slider)));
 
+    /* disconnect the signal, otherwise a value change outside the app causes a refresh, which sets the value, which calls the callback,
+     * which in turn rounds the value and sets it again system-wide
+     */
+    g_signal_handlers_disconnect_by_data (G_OBJECT (gam_slider_pan->priv->vol_adjustment), gam_slider_pan);
     gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment),
                               (gdouble) gam_slider_pan_get_volume (gam_slider_pan));
+    g_signal_connect (G_OBJECT (gam_slider_pan->priv->vol_adjustment), "value-changed",
+                      G_CALLBACK (gam_slider_pan_volume_value_changed_cb), gam_slider_pan);
 
     if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (gam_slider))) {
         gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment),
