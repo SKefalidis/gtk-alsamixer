@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

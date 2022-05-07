@@ -83,7 +83,7 @@ XDT_CHECK_LIBX11()
 dnl ***********************************
 dnl *** Check for required packages ***
 dnl ***********************************
-XDT_CHECK_PACKAGE([GTK], [gtk+-2.0], [2.22.0])
+XDT_CHECK_PACKAGE([GTK], [gtk+-3.0], [3.22.30])
 XDT_CHECK_PACKAGE([ALSA], [alsa], [1.2.0])
 XDT_CHECK_PACKAGE([LIBXFCE4UI], [libxfce4ui-2], [4.16.0])
 

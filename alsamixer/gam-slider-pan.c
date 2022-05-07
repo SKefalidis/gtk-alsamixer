@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,8 +24,6 @@
 #endif
 
 #include <math.h>
-#include <gtk/gtkhscale.h>
-#include <gtk/gtkvscale.h>
 
 #include "gam-slider-pan.h"
 
@@ -32,8 +31,8 @@ struct _GamSliderPanPrivate
 {
     GtkWidget *pan_slider;
     GtkWidget *vol_slider;
-    GtkObject *pan_adjustment;
-    GtkObject *vol_adjustment;
+    GtkAdjustment *pan_adjustment;
+    GtkAdjustment *vol_adjustment;
 };
 
 static void     gam_slider_pan_finalize                (GObject               *object);
@@ -204,19 +203,31 @@ gam_slider_pan_update_volume (GamSliderPan *gam_slider_pan)
 {
     gint left_chn = 0, right_chn = 0;
     glong pmin, pmax;
+    gdouble vol_value;
+    gdouble pan_value;
 
     if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
         snd_mixer_selem_get_playback_volume_range (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), &pmin, &pmax);
     else
         snd_mixer_selem_get_capture_volume_range (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), &pmin, &pmax);
 
-    left_chn = right_chn = rint ((100 - GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment)->value) / (100 / (gfloat)pmax));
+    if (gam_slider_pan->priv->vol_adjustment)
+        vol_value = gtk_adjustment_get_value (GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment));
+    else
+        vol_value = 0;
+
+    if (gam_slider_pan->priv->pan_adjustment)
+        pan_value = gtk_adjustment_get_value (GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment));
+    else
+        pan_value = 0;
+
+    left_chn = right_chn = rint ((100 - vol_value) / (100 / (gfloat)pmax));
 
     if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        if (GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment)->value < 0) {
-            right_chn = rint (left_chn - ((gfloat)ABS(GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment)->value) / 100) * left_chn);
-        } else if (GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment)->value > 0) {
-            left_chn = rint (right_chn - ((gfloat)GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment)->value / 100) * right_chn);
+        if (pan_value < 0) {
+            right_chn = rint (left_chn - ((gfloat)ABS(pan_value) / 100) * left_chn);
+        } else if (pan_value> 0) {
+            left_chn = rint (right_chn - ((gfloat)pan_value / 100) * right_chn);
         }
     }
 

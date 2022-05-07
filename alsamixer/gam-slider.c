@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,13 +23,9 @@
 #include <config.h>
 #endif
 
-#include <math.h>
 #include <glib/gi18n.h>
-#include <gtk/gtkvbox.h>
-#include <gtk/gtkvseparator.h>
-#include <gtk/gtktogglebutton.h>
 
-#include "gam-slider.h"
+#include <alsamixer/gam-slider.h>
 
 enum {
     PROP_0,
@@ -81,7 +78,7 @@ static gint     gam_slider_get_widget_position       (GamSlider             *gam
 static gpointer parent_class;
 static guint    signals[LAST_SIGNAL] = { 0 };
 
-G_DEFINE_TYPE_WITH_CODE (GamSlider , gam_slider, GTK_TYPE_HBOX,
+G_DEFINE_TYPE_WITH_CODE (GamSlider, gam_slider, GTK_TYPE_HBOX,
                          G_ADD_PRIVATE (GamSlider))
 
 static void

@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,8 +23,12 @@
 #define __GAM_MIXER_H__
 
 #include <alsa/asoundlib.h>
-#include <gtk/gtkvbox.h>
+#include <gtk/gtk.h>
 #include <gtk/gtksizegroup.h>
+#include <alsamixer/gam-app.h>
+
+typedef struct _GamSlider GamSlider;
+typedef struct _GamToggle GamToggle;
 
 G_BEGIN_DECLS
 
@@ -53,15 +58,11 @@ struct _GamMixerClass
     void (* visibility_changed)   (GtkWidget *w);
 };
 
-#include "gam-app.h"
-#include "gam-slider.h"
-#include "gam-toggle.h"
-
 GType                 gam_mixer_get_type          (void) G_GNUC_CONST;
 GtkWidget            *gam_mixer_new               (GamApp      *gam_app,
                                                    const gchar *card_id);
-const gchar *gam_mixer_get_mixer_name    (GamMixer    *gam_mixer);
-const gchar *gam_mixer_get_config_name   (GamMixer    *gam_mixer);
+const gchar          *gam_mixer_get_mixer_name    (GamMixer    *gam_mixer);
+const gchar          *gam_mixer_get_config_name   (GamMixer    *gam_mixer);
 gchar                *gam_mixer_get_display_name  (GamMixer    *gam_mixer);
 void                  gam_mixer_set_display_name  (GamMixer    *gam_mixer,
                                                    const gchar *name);

@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,7 +25,6 @@
 
 #include <math.h>
 #include <glib/gi18n.h>
-#include <gtk/gtkvscale.h>
 
 #include "gam-slider-dual.h"
 
@@ -34,8 +34,8 @@ struct _GamSliderDualPrivate
     GtkWidget *lock_button;
     GtkWidget *vol_slider_left;
     GtkWidget *vol_slider_right;
-    GtkObject *vol_adjustment_left;
-    GtkObject *vol_adjustment_right;
+    GtkAdjustment *vol_adjustment_left;
+    GtkAdjustment *vol_adjustment_right;
     gdouble    pan;
     gboolean   refreshing;
 };
@@ -233,7 +233,7 @@ gam_slider_dual_update_volume_left (GamSliderDual *gam_slider_dual)
     else
         snd_mixer_selem_get_capture_volume_range (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), &pmin, &pmax);
 
-    left_chn = rint ((100 - GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_left)->value) / (100 / (gfloat)pmax));
+    left_chn = rint ((100 - gtk_adjustment_get_value (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_left))) / (100 / (gfloat)pmax));
 
     if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
         snd_mixer_selem_set_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_LEFT, left_chn);
@@ -253,7 +253,7 @@ gam_slider_dual_update_volume_right (GamSliderDual *gam_slider_dual)
     else
         snd_mixer_selem_get_capture_volume_range (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), &pmin, &pmax);
 
-    right_chn = rint ((100 - GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_right)->value) / (100 / (gfloat)pmax));
+    right_chn = rint ((100 - gtk_adjustment_get_value (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_right))) / (100 / (gfloat)pmax));
 
     if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
         snd_mixer_selem_set_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_RIGHT, right_chn);

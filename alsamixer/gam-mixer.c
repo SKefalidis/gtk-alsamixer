@@ -2,6 +2,7 @@
  *  (gtk-alsamixer) An ALSA mixer for GTK
  *
  *  Copyright (C) 2001-2005 Derrick J Houy <djhouy@paw.za.org>.
+ *  Copyright (C) 2022 Sergios - Anestis Kefalidis <sergioskefalidis@gmail.com>.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,7 +25,6 @@
 
 #include <math.h>
 #include <glib/gi18n.h>
-#include <gtk/gtkhseparator.h>
 
 #include "gam-mixer.h"
 #include "gam-slider-pan.h"
@@ -83,9 +83,9 @@ static void     gam_mixer_get_property       (GObject               *object,
                                               GParamSpec            *pspec);
 static void     gam_mixer_construct_elements (GamMixer              *gam_mixer);
 static void     gam_mixer_construct_sliders  (GamMixer              *gam_mixer);
-static void     gam_mixer_refresh            (gpointer               data,
-                                              gint                   source,
-                                              GdkInputCondition      condition);
+static gboolean gam_mixer_refresh            (GIOChannel            *source,
+                                              GIOCondition           condition,
+                                              gpointer               data);
 
 static gpointer parent_class;
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -97,7 +97,7 @@ static void
 gam_mixer_class_init (GamMixerClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    GtkObjectClass *object_class = (GtkObjectClass*) klass;
+    GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
     parent_class = g_type_class_peek_parent (klass);
 
@@ -108,7 +108,7 @@ gam_mixer_class_init (GamMixerClass *klass)
 
     signals[DISPLAY_NAME_CHANGED] =
         g_signal_new ("display_name_changed",
-                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_OBJECT_CLASS_TYPE (widget_class),
                       G_SIGNAL_RUN_FIRST,
                       G_STRUCT_OFFSET (GamMixerClass, display_name_changed),
                       NULL, NULL,
@@ -117,7 +117,7 @@ gam_mixer_class_init (GamMixerClass *klass)
 
     signals[VISIBILITY_CHANGED] =
         g_signal_new ("visibility_changed",
-                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_OBJECT_CLASS_TYPE (widget_class),
                       G_SIGNAL_RUN_FIRST,
                       G_STRUCT_OFFSET (GamMixerClass, visibility_changed),
                       NULL, NULL,
@@ -144,7 +144,8 @@ static void
 gam_mixer_init (GamMixer *gam_mixer)
 {
     GtkWidget *separator, *scrolled_window = NULL;
-    GtkObject *hadjustment, *vadjustment;
+    GtkAdjustment *hadjustment;
+    GtkAdjustment *vadjustment;
 
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
 
@@ -169,29 +170,23 @@ gam_mixer_init (GamMixer *gam_mixer)
     hadjustment = gtk_adjustment_new (0, 0, 101, 5, 5, 5);
     vadjustment = gtk_adjustment_new (0, 0, 101, 5, 5, 5);
 
-    scrolled_window = gtk_scrolled_window_new (GTK_ADJUSTMENT (hadjustment),
-                                               GTK_ADJUSTMENT (vadjustment));
-    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window),
-                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
-    gtk_widget_show (scrolled_window);
-    gtk_box_pack_start (GTK_BOX (gam_mixer),
-                        scrolled_window, TRUE, TRUE, 0);
+    /* sliders */
+    scrolled_window = gtk_scrolled_window_new (GTK_ADJUSTMENT (hadjustment), GTK_ADJUSTMENT (vadjustment));
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
+    gtk_box_pack_start (GTK_BOX (gam_mixer), scrolled_window, TRUE, TRUE, 0);
 
-    gam_mixer->priv->slider_box = gtk_hbox_new (TRUE, 0);
-    gtk_widget_show (gam_mixer->priv->slider_box);
+    gam_mixer->priv->slider_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add (GTK_CONTAINER (scrolled_window), gam_mixer->priv->slider_box);
 
-    gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scrolled_window),
-                                           gam_mixer->priv->slider_box);
+    /* separator */
+    separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_pack_start (GTK_BOX (gam_mixer), separator, FALSE, TRUE, 1);
 
-    separator = gtk_hseparator_new ();
-    gtk_widget_show (separator);
-    gtk_box_pack_start (GTK_BOX (gam_mixer),
-                        separator, FALSE, TRUE, 1);
+    /* toggles */
+    gam_mixer->priv->toggle_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start (GTK_BOX (gam_mixer), gam_mixer->priv->toggle_box, FALSE, FALSE, 0);
 
-    gam_mixer->priv->toggle_box = gtk_hbox_new (TRUE, 0);
-    gtk_widget_show (gam_mixer->priv->toggle_box);
-    gtk_box_pack_start (GTK_BOX (gam_mixer),
-                        gam_mixer->priv->toggle_box, FALSE, FALSE, 0);
+    gtk_widget_show_all (GTK_WIDGET (gam_mixer));
 }
 
 static void
@@ -201,13 +196,12 @@ gam_mixer_finalize (GObject *object)
     guint input_id;
 
     for (input_id = 0; input_id < gam_mixer->priv->input_id_count; ++input_id)
-        gtk_input_remove (gam_mixer->priv->input_ids[input_id]);
+        g_source_remove (gam_mixer->priv->input_ids[input_id]);
 
     g_free (gam_mixer->priv->card_id);
     g_free (gam_mixer->priv->card_name);
     g_free (gam_mixer->priv->mixer_name);
     g_free (gam_mixer->priv->mixer_name_config);
-    g_free (gam_mixer->priv->input_ids);
 
     gam_mixer->priv->handle = NULL;
     gam_mixer->priv->app = NULL;
@@ -286,16 +280,22 @@ gam_mixer_constructor (GType                  type,
     input_ids = g_new (guint, poll_count);
 
     for (input_id = 0; input_id < poll_count; ++input_id) {
-        GdkInputCondition condition = 0;
+        GIOChannel  *channel;
+        GIOCondition condition = 0;
         const struct pollfd * const pollfd = &polls[input_id];
-        const gint source = pollfd->fd;
-        const short events = pollfd->events;
+        const short  events = pollfd->events;
 
-        if (events & POLLIN)  condition |= GDK_INPUT_READ;
-        if (events & POLLOUT) condition |= GDK_INPUT_WRITE;
-        if (events & POLLPRI) condition |= GDK_INPUT_EXCEPTION;
+        if (events & POLLIN)
+            condition |= G_IO_IN;
+        if (events & POLLOUT)
+            condition |= G_IO_OUT;
+        if (events & POLLPRI)
+            condition |= G_IO_PRI;
 
-        input_ids[input_id] = gtk_input_add_full (source, condition, gam_mixer_refresh, 0, gam_mixer, 0);
+        channel = g_io_channel_unix_new (pollfd->fd);
+        input_ids[input_id] = g_io_add_watch_full (channel, G_PRIORITY_HIGH, condition,
+                                                   gam_mixer_refresh, gam_mixer,
+                                                   NULL);
       }
 
     gam_mixer->priv->input_ids = input_ids;
@@ -501,12 +501,16 @@ gam_mixer_set_visible (GamMixer *gam_mixer, gboolean visible)
     g_signal_emit (G_OBJECT (gam_mixer), signals[VISIBILITY_CHANGED], 0);
 }
 
-static void
-gam_mixer_refresh (gpointer data, gint source, GdkInputCondition condition)
+static gboolean
+gam_mixer_refresh (GIOChannel   *source,
+                   GIOCondition  condition,
+                   gpointer      data)
 {
     const GamMixer * const gam_mixer = GAM_MIXER (data);
 
     snd_mixer_handle_events (gam_mixer->priv->handle);
+
+    return TRUE;
 }
 
 void
