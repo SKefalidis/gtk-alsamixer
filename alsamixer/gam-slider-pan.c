@@ -137,6 +137,7 @@ gam_slider_pan_constructor (GType                  type,
                       G_CALLBACK (gam_slider_pan_volume_value_changed_cb), gam_slider_pan);
 
     gam_slider_pan->priv->vol_slider = gtk_vscale_new (GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment));
+    gtk_range_set_inverted (GTK_RANGE (gam_slider_pan->priv->vol_slider), TRUE);
     gtk_widget_show (gam_slider_pan->priv->vol_slider);
     gtk_scale_set_draw_value (GTK_SCALE (gam_slider_pan->priv->vol_slider), FALSE);
 
