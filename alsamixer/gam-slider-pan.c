@@ -131,7 +131,7 @@ gam_slider_pan_constructor (GType                  type,
 
     gam_slider_add_pan_widget (GAM_SLIDER (gam_slider_pan), gam_slider_pan->priv->pan_slider);
 
-    gam_slider_pan->priv->vol_adjustment = gtk_adjustment_new (gam_slider_pan_get_volume (gam_slider_pan), 0, 101, 1, 5, 1);
+    gam_slider_pan->priv->vol_adjustment = gtk_adjustment_new (gam_slider_pan_get_volume (gam_slider_pan), 0, 100, 1, 5, 1);
 
     g_signal_connect (G_OBJECT (gam_slider_pan->priv->vol_adjustment), "value-changed",
                       G_CALLBACK (gam_slider_pan_volume_value_changed_cb), gam_slider_pan);
