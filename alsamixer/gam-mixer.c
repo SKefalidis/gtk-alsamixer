@@ -411,6 +411,7 @@ void
 gam_mixer_construct_sliders (GamMixer *gam_mixer)
 {
     GtkWidget *slider;
+    GtkWidget *separator;
     snd_mixer_elem_t *elem;
 
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
@@ -445,6 +446,11 @@ gam_mixer_construct_sliders (GamMixer *gam_mixer)
 
                 gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box),
                                     slider, TRUE, TRUE, 0);
+
+                separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
+
+                gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box),
+                                    separator, TRUE, TRUE, 0);
 
                 if (gam_slider_get_visible (GAM_SLIDER (slider)))
                     gtk_widget_show (slider);
