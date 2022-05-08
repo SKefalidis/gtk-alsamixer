@@ -1,6 +1,8 @@
 #ifndef VOLUME_MAPPING_H_INCLUDED
 #define VOLUME_MAPPING_H_INCLUDED
 
+/* credit to the alsa-utils development team */
+
 #include <alsa/asoundlib.h>
 
 double get_normalized_playback_volume(snd_mixer_elem_t *elem,
