@@ -44,7 +44,9 @@ static GObject  *gam_app_constructor                   (GType                  t
 //static void      gam_app_save_prefs                    (GamApp                *gam_app);
 static void      gam_app_mixer_display_name_changed_cb (GamMixer              *gam_mixer,
                                                         GamApp                *gam_app);
-static void gam_app_mixer_visibility_changed_cb (GamMixer *gam_mixer);
+static void      gam_app_mixer_visibility_changed_cb   (GamMixer              *gam_mixer);
+static void      gam_app_switch_mixer_ui               (GtkWidget             *button,
+                                                        GamApp                *gam_app);
 
 static gpointer parent_class;
 
@@ -115,7 +117,7 @@ gam_app_constructor (GType                  type,
 {
     GObject *object;
     GamApp *gam_app;
-    GtkWidget *main_box, *mixer, *label;
+    GtkWidget *main_box, *mixer, *label, *button;
     snd_ctl_t *ctl_handle;
     gint result, index = 0;
     gchar *card;
@@ -139,7 +141,7 @@ gam_app_constructor (GType                  type,
         if (result == 0) {
             snd_ctl_close(ctl_handle);
 
-            mixer = gam_mixer_new (gam_app, card);
+            mixer = gam_mixer_new (gam_app, card, "PAN");
 
             if (gam_mixer_get_visible (GAM_MIXER (mixer)))
                 gtk_widget_show (mixer);
@@ -164,15 +166,61 @@ gam_app_constructor (GType                  type,
 
     gtk_container_add (GTK_CONTAINER (gam_app), main_box);
 
-    gtk_widget_show_all (GTK_WIDGET (main_box));
-
     gtk_box_pack_start (GTK_BOX (main_box), gam_app->priv->notebook, TRUE, TRUE, 0);
 
-    gtk_widget_show (gam_app->priv->notebook);
+    button = gtk_button_new_with_label ("Switch UI");
+    g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (gam_app_switch_mixer_ui), gam_app);
+    gtk_box_pack_end (GTK_BOX (main_box), button, FALSE, FALSE, 0);
+
+    gtk_widget_show_all (GTK_WIDGET (main_box));
 
 //    gam_app_load_prefs (gam_app);
 
     return object;
+}
+
+static void
+gam_app_switch_mixer_ui (GtkWidget *button,
+                         GamApp    *gam_app)
+{
+    GtkWidget *mixer, *label;
+    GtkWidget *old_mixer;
+    snd_ctl_t *ctl_handle;
+    gint   current_page;
+    gint   result;
+    gchar *card;
+    gchar *style;
+
+    current_page = gtk_notebook_get_current_page (GTK_NOTEBOOK (gam_app->priv->notebook));
+    old_mixer = gtk_notebook_get_nth_page (GTK_NOTEBOOK (gam_app->priv->notebook), current_page);
+    g_object_get (G_OBJECT (old_mixer), "card_id", &card, "style", &style, NULL);
+
+    result = snd_ctl_open (&ctl_handle, card, 0);
+    if (result == 0) {
+        snd_ctl_close(ctl_handle);
+
+        if (g_strcmp0 (style, "PAN") == 0)
+            mixer = gam_mixer_new (gam_app, card, "DUAL");
+        else
+            mixer = gam_mixer_new (gam_app, card, "PAN");
+
+        if (gam_mixer_get_visible (GAM_MIXER (mixer)))
+            gtk_widget_show (mixer);
+
+        g_signal_connect (G_OBJECT (mixer), "display_name_changed",
+                          G_CALLBACK (gam_app_mixer_display_name_changed_cb), gam_app);
+        g_signal_connect (G_OBJECT (mixer), "visibility_changed",
+                          G_CALLBACK (gam_app_mixer_visibility_changed_cb), gam_app);
+
+        label = gtk_label_new (gam_mixer_get_display_name (GAM_MIXER (mixer)));
+        gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_LEFT);
+
+        gtk_notebook_insert_page (GTK_NOTEBOOK (gam_app->priv->notebook), mixer, label, current_page);
+        gtk_notebook_set_current_page (GTK_NOTEBOOK (gam_app->priv->notebook), current_page);
+        gtk_notebook_remove_page (GTK_NOTEBOOK (gam_app->priv->notebook), current_page + 1);
+    }
+
+    g_free (card);
 }
 
 //static void

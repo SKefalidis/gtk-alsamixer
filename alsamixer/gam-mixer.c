@@ -41,7 +41,8 @@ enum {
 enum {
     PROP_0,
     PROP_APP,
-    PROP_CARD_ID
+    PROP_CARD_ID,
+    PROP_STYLE
 };
 
 struct _GamMixerPrivate
@@ -67,6 +68,8 @@ struct _GamMixerPrivate
     gchar        *card_name;
     gchar        *mixer_name;
     gchar        *mixer_name_config;
+
+    gchar        *style;
 };
 
 static void     gam_mixer_finalize           (GObject               *object);
@@ -136,6 +139,14 @@ gam_mixer_class_init (GamMixerClass *klass)
                                      g_param_spec_string ("card_id",
                                                         _("Card ID"),
                                                         _("ALSA Card ID (usually 'default')"),
+                                                        NULL,
+                                                        (GParamFlags) (G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
+
+    g_object_class_install_property (gobject_class,
+                                     PROP_STYLE,
+                                     g_param_spec_string ("style",
+                                                        _("Style"),
+                                                        _("Style"),
                                                         NULL,
                                                         (GParamFlags) (G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
 }
@@ -324,6 +335,10 @@ gam_mixer_set_property (GObject      *object,
             gam_mixer->priv->card_id = g_strdup (g_value_get_string (value));
             g_object_notify (G_OBJECT (gam_mixer), "card_id");
             break;
+        case PROP_STYLE:
+            gam_mixer->priv->style = g_strdup (g_value_get_string (value));
+            g_object_notify (G_OBJECT (gam_mixer), "style");
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
             break;
@@ -346,6 +361,9 @@ gam_mixer_get_property (GObject    *object,
             break;
         case PROP_CARD_ID:
             g_value_set_string (value, gam_mixer->priv->card_id);
+            break;
+        case PROP_STYLE:
+            g_value_set_string (value, gam_mixer->priv->style);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -412,7 +430,7 @@ gam_mixer_construct_sliders (GamMixer *gam_mixer)
     for (elem = snd_mixer_first_elem (gam_mixer->priv->handle); elem; elem = snd_mixer_elem_next (elem)) {
         if (snd_mixer_selem_is_active (elem)) {
             if (snd_mixer_selem_has_playback_volume (elem) || snd_mixer_selem_has_capture_volume (elem)) {
-                if (gam_app_get_mixer_slider_style () == 1) {
+                if (g_strcmp0 (gam_mixer->priv->style, "DUAL") == 0) {
                     slider = gam_slider_dual_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
                     gam_slider_dual_set_size_groups (GAM_SLIDER_DUAL (slider),
                                                      gam_mixer->priv->pan_size_group,
@@ -439,11 +457,12 @@ gam_mixer_construct_sliders (GamMixer *gam_mixer)
 }
 
 GtkWidget *
-gam_mixer_new (GamApp *gam_app, const gchar *card_id)
+gam_mixer_new (GamApp *gam_app, const gchar *card_id, const gchar *style)
 {
     return g_object_new (GAM_TYPE_MIXER,
                          "app", gam_app,
                          "card_id", card_id,
+                         "style", style,
                          NULL);
 }
 

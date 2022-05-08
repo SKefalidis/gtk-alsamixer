@@ -60,7 +60,8 @@ struct _GamMixerClass
 
 GType                 gam_mixer_get_type          (void) G_GNUC_CONST;
 GtkWidget            *gam_mixer_new               (GamApp      *gam_app,
-                                                   const gchar *card_id);
+                                                   const gchar *card_id,
+                                                   const gchar *style);
 const gchar          *gam_mixer_get_mixer_name    (GamMixer    *gam_mixer);
 const gchar          *gam_mixer_get_config_name   (GamMixer    *gam_mixer);
 gchar                *gam_mixer_get_display_name  (GamMixer    *gam_mixer);
