@@ -101,6 +101,8 @@ if test x"$with_utempter" = x"yes"; then
 fi
 AM_CONDITIONAL([HAVE_UTEMPTER], [test x"$with_utempter" = x"yes"])
 
+AC_CHECK_LIB([m],[pow])
+
 dnl ****************************************
 dnl *** Register in Gnome Control Center ***
 dnl ****************************************

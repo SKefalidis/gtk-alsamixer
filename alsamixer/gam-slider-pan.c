@@ -24,6 +24,7 @@
 #endif
 
 #include <math.h>
+#include <alsamixer/volume_mapping.h>
 
 #include "gam-slider-pan.h"
 
@@ -114,7 +115,7 @@ gam_slider_pan_constructor (GType                  type,
     gam_slider_pan = GAM_SLIDER_PAN (object);
 
     if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        gam_slider_pan->priv->pan_adjustment = gtk_adjustment_new (gam_slider_pan_get_pan (gam_slider_pan), -100, 101, 1, 5, 1);
+        gam_slider_pan->priv->pan_adjustment = gtk_adjustment_new (gam_slider_pan_get_pan (gam_slider_pan), -100, 100, 1, 5, 1);
 
         g_signal_connect (G_OBJECT (gam_slider_pan->priv->pan_adjustment), "value-changed",
                           G_CALLBACK (gam_slider_pan_pan_value_changed_cb), gam_slider_pan);
@@ -175,43 +176,33 @@ gam_slider_pan_get_pan (GamSliderPan *gam_slider_pan)
 static gint
 gam_slider_pan_get_volume (GamSliderPan *gam_slider_pan)
 {
-    glong left_chn, right_chn, pmin, pmax;
+    gdouble left_playback_vol = 0, left_capture_vol = 0;
+    gdouble right_playback_vol = 0, right_capture_vol = 0;
+    gboolean mono = snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)));
 
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
-        snd_mixer_selem_get_playback_volume_range (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), &pmin, &pmax);
-    else
-        snd_mixer_selem_get_capture_volume_range (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), &pmin, &pmax);
+    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
+        left_playback_vol = get_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT);
+        if (mono == FALSE)
+            right_playback_vol = get_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT);
 
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
-        snd_mixer_selem_get_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, &left_chn);
-    else
-        snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, &left_chn);
-
-    if (snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        return rint (left_chn * (100 / (gfloat)pmax));
+        return lrint (ceil (MAX (left_playback_vol, right_playback_vol) * 100));
     } else {
-        if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
-            snd_mixer_selem_get_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
-        else
-            snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
+        left_capture_vol = get_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT);
+        if (mono == FALSE)
+            right_capture_vol = get_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT);
 
-        return rint (MAX(left_chn, right_chn) * (100 / (gfloat)pmax));
+        return lrint (ceil (MAX (left_capture_vol, right_capture_vol) * 100));
     }
 }
 
 static void
 gam_slider_pan_update_volume (GamSliderPan *gam_slider_pan)
 {
-    gint left_chn = 0, right_chn = 0;
-    glong pmin, pmax;
-    gdouble vol_value;
+    gdouble left_vol_value, right_vol_value, vol_value;
     gdouble pan_value;
+    gboolean mono = snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)));
 
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
-        snd_mixer_selem_get_playback_volume_range (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), &pmin, &pmax);
-    else
-        snd_mixer_selem_get_capture_volume_range (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), &pmin, &pmax);
-
+    /* get values */
     if (gam_slider_pan->priv->vol_adjustment)
         vol_value = gtk_adjustment_get_value (GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment));
     else
@@ -222,24 +213,28 @@ gam_slider_pan_update_volume (GamSliderPan *gam_slider_pan)
     else
         pan_value = 0;
 
-    left_chn = right_chn = rint (vol_value / (100 / (gfloat)pmax));
+    left_vol_value = right_vol_value = vol_value;
 
-    if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
+    /* handle panning */
+    if (mono == FALSE) {
         if (pan_value < 0) {
-            right_chn = rint (left_chn - ((gfloat)ABS(pan_value) / 100) * left_chn);
+            right_vol_value = rint (vol_value - ((gfloat)ABS(pan_value) / 100) * vol_value);
         } else if (pan_value> 0) {
-            left_chn = rint (right_chn - ((gfloat)pan_value / 100) * right_chn);
+            left_vol_value = rint (vol_value - ((gfloat)pan_value / 100) * vol_value);
         }
     }
+    left_vol_value /= 100;
+    right_vol_value /= 100;
 
+    /* set volume */
     if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        snd_mixer_selem_set_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, left_chn);
-        if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
-            snd_mixer_selem_set_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, right_chn);
+        set_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, left_vol_value, 1);
+        if (mono == FALSE)
+            set_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, right_vol_value, 1);
     } else {
-        snd_mixer_selem_set_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, left_chn);
-        if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
-            snd_mixer_selem_set_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, right_chn);
+        set_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, left_vol_value, 1);
+        if (mono == FALSE)
+            set_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, right_vol_value, 1);
     }
 }
 

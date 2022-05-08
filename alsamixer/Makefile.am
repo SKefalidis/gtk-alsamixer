@@ -17,7 +17,8 @@ xfce4_alsamixer_headers = \
 	game-prefs-dlg.h \
 	gam-props-dlg.h \
 	gam-slider-pan.h \
-	gam-slider-dual.h
+	gam-slider-dual.h \
+	volume_mapping.h
 
 xfce4_alsamixer_SOURCES = \
 	$(xfce4_alsamixer_headers) \
@@ -27,7 +28,8 @@ xfce4_alsamixer_SOURCES = \
 	gam-slider.c \
 	gam-toggle.c \
 	gam-slider-pan.c \
-	gam-slider-dual.c
+	gam-slider-dual.c \
+	volume_mapping.c
 
 xfce4_alsamixer_CFLAGS = \
 	$(GTK_CFLAGS) \
