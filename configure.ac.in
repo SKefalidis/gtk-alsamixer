@@ -30,7 +30,7 @@ dnl ***************************
 dnl *** Initialize autoconf ***
 dnl ***************************
 AC_COPYRIGHT([Copyright (c) 2003-2022
-        Sergios - Anestis Kefalidis, Vitaliy Kopylov. All rights reserved.])
+        Sergios - Anestis Kefalidis, Derrick J Houy. All rights reserved.])
 
 AC_INIT([xfce4-alsamixer], [alsamixer_version], [https://github.com/SKefalidis/gtk-alsamixer/])
 AC_REVISION([@REVISION@])
