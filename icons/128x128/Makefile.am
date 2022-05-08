@@ -4,5 +4,4 @@ EXTRA_DIST =				\
 Datadir = $(datadir)/icons/hicolor/128x128/apps
 
 Data_DATA =				\
-	org.xfce.terminal.png		\
-	org.xfce.terminal-settings.png
+	xfce4-alsamixer.png
