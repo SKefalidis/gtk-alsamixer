@@ -134,14 +134,14 @@ gam_slider_dual_constructor (GType                  type,
 
     gam_slider_dual = GAM_SLIDER_DUAL (object);
 
-    hbox = gtk_hbox_new (FALSE, 0);
+    hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show (hbox);
 
     gam_slider_dual->priv->vol_adjustment_left = gtk_adjustment_new (gam_slider_dual_get_volume_left (gam_slider_dual), 0, 100, 1, 5, 1);
 
     g_signal_connect (G_OBJECT (gam_slider_dual->priv->vol_adjustment_left), "value-changed", G_CALLBACK (gam_slider_dual_volume_left_value_changed_cb), gam_slider_dual);
 
-    gam_slider_dual->priv->vol_slider_left = gtk_vscale_new (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_left));
+    gam_slider_dual->priv->vol_slider_left = gtk_scale_new (GTK_ORIENTATION_VERTICAL, GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_left));
     gtk_range_set_inverted (GTK_RANGE (gam_slider_dual->priv->vol_slider_left), TRUE);
     gtk_widget_show (gam_slider_dual->priv->vol_slider_left);
     gtk_scale_set_draw_value (GTK_SCALE (gam_slider_dual->priv->vol_slider_left), FALSE);
@@ -153,7 +153,7 @@ gam_slider_dual_constructor (GType                  type,
 
         g_signal_connect (G_OBJECT (gam_slider_dual->priv->vol_adjustment_right), "value-changed", G_CALLBACK (gam_slider_dual_volume_right_value_changed_cb), gam_slider_dual);
 
-        gam_slider_dual->priv->vol_slider_right = gtk_vscale_new (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_right));
+        gam_slider_dual->priv->vol_slider_right = gtk_scale_new (GTK_ORIENTATION_VERTICAL, GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_right));
         gtk_range_set_inverted (GTK_RANGE (gam_slider_dual->priv->vol_slider_right), TRUE);
         gtk_widget_show (gam_slider_dual->priv->vol_slider_right);
         gtk_scale_set_draw_value (GTK_SCALE (gam_slider_dual->priv->vol_slider_right), FALSE);

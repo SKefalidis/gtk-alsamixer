@@ -120,7 +120,7 @@ gam_slider_pan_constructor (GType                  type,
         g_signal_connect (G_OBJECT (gam_slider_pan->priv->pan_adjustment), "value-changed",
                           G_CALLBACK (gam_slider_pan_pan_value_changed_cb), gam_slider_pan);
 
-        gam_slider_pan->priv->pan_slider = gtk_hscale_new (GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment));
+        gam_slider_pan->priv->pan_slider = gtk_scale_new (GTK_ORIENTATION_HORIZONTAL, GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment));
         gtk_scale_set_draw_value (GTK_SCALE (gam_slider_pan->priv->pan_slider), FALSE);
 
         g_signal_connect (G_OBJECT (gam_slider_pan->priv->pan_slider), "event",
@@ -137,7 +137,7 @@ gam_slider_pan_constructor (GType                  type,
     g_signal_connect (G_OBJECT (gam_slider_pan->priv->vol_adjustment), "value-changed",
                       G_CALLBACK (gam_slider_pan_volume_value_changed_cb), gam_slider_pan);
 
-    gam_slider_pan->priv->vol_slider = gtk_vscale_new (GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment));
+    gam_slider_pan->priv->vol_slider = gtk_scale_new (GTK_ORIENTATION_VERTICAL, GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment));
     gtk_range_set_inverted (GTK_RANGE (gam_slider_pan->priv->vol_slider), TRUE);
     gtk_widget_show (gam_slider_pan->priv->vol_slider);
     gtk_scale_set_draw_value (GTK_SCALE (gam_slider_pan->priv->vol_slider), FALSE);
@@ -167,7 +167,7 @@ gam_slider_pan_get_pan (GamSliderPan *gam_slider_pan)
             snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
 
         if ((gam_slider_pan_get_volume (gam_slider_pan) != 0) && (left_chn != right_chn))
-            return rint (((gfloat)(right_chn - left_chn) / (gfloat)MAX(left_chn, right_chn)) * 100);
+            return rint (((gdouble)(right_chn - left_chn) / (gdouble)MAX(left_chn, right_chn)) * 100);
     }
 
     return 0;
@@ -243,7 +243,7 @@ gam_slider_pan_pan_event_cb (GtkWidget *widget, GdkEvent *event, GamSliderPan *g
 {
     if (event->type == GDK_2BUTTON_PRESS) {
         gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment), 0.0);
-        gtk_adjustment_value_changed (GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment));
+        g_signal_emit_by_name (G_OBJECT (gam_slider_pan->priv->pan_adjustment), "value-changed");
 
         return TRUE;
     }

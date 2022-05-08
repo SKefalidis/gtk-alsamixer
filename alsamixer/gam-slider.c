@@ -78,8 +78,7 @@ static gint     gam_slider_get_widget_position       (GamSlider             *gam
 static gpointer parent_class;
 static guint    signals[LAST_SIGNAL] = { 0 };
 
-G_DEFINE_TYPE_WITH_CODE (GamSlider, gam_slider, GTK_TYPE_HBOX,
-                         G_ADD_PRIVATE (GamSlider))
+G_DEFINE_TYPE_WITH_CODE (GamSlider, gam_slider, GTK_TYPE_BOX, G_ADD_PRIVATE (GamSlider))
 
 static void
 gam_slider_class_init (GamSliderClass *klass)
@@ -128,6 +127,8 @@ static void
 gam_slider_init (GamSlider *gam_slider)
 {
     g_return_if_fail (GAM_IS_SLIDER (gam_slider));
+
+    gtk_orientable_set_orientation (GTK_ORIENTABLE (gam_slider), GTK_ORIENTATION_VERTICAL);
 
     gam_slider->priv = gam_slider_get_instance_private (gam_slider);
 
@@ -184,13 +185,13 @@ gam_slider_constructor (GType                  type,
 
     gam_slider = GAM_SLIDER (object);
 
-    gam_slider->priv->vbox = gtk_vbox_new (FALSE, 0);
+    gam_slider->priv->vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show (gam_slider->priv->vbox);
 
     gtk_box_pack_start (GTK_BOX (gam_slider),
                         gam_slider->priv->vbox, TRUE, TRUE, 0);
 
-    separator = gtk_vseparator_new ();
+    separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
     gtk_widget_show (separator);
 
     gtk_box_pack_start (GTK_BOX (gam_slider),
@@ -334,8 +335,8 @@ gam_slider_capture_button_toggled_cb (GtkWidget *widget, GamSlider *gam_slider)
 static gint
 gam_slider_get_widget_position (GamSlider *gam_slider, GtkWidget *widget)
 {
-    GValue value = { 0, };
-    gint position = -1;
+    GValue  value = { 0, };
+    gint    position;
 
     g_return_val_if_fail (GAM_IS_SLIDER (gam_slider), -1);
     g_return_val_if_fail (GTK_IS_WIDGET (widget), -1);

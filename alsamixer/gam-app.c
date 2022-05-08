@@ -83,12 +83,12 @@ gam_app_init (GamApp *gam_app)
 static gboolean
 gam_app_delete (GtkWidget *widget, gpointer user_data)
 {
-    GamApp *gam_app;
+//    GamApp *gam_app;
 
     g_return_val_if_fail (widget != NULL, FALSE);
     g_return_val_if_fail (GAM_IS_APP (widget), FALSE);
 
-    gam_app = GAM_APP (widget);
+//    gam_app = GAM_APP (widget);
 
 //    gam_app_save_prefs (gam_app);
 
@@ -162,7 +162,7 @@ gam_app_constructor (GType                  type,
     } while (result == 0);
 
     // Pack widgets into window
-    main_box = gtk_vbox_new (FALSE, 0);
+    main_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 
     gtk_container_add (GTK_CONTAINER (gam_app), main_box);
 

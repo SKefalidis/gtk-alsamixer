@@ -23,14 +23,12 @@
 #include <config.h>
 #endif
 
-#include <math.h>
 #include <glib/gi18n.h>
 
 #include "gam-mixer.h"
 #include "gam-slider-pan.h"
 #include "gam-slider-dual.h"
 #include "gam-toggle.h"
-#include "gam-props-dlg.h"
 
 enum {
     DISPLAY_NAME_CHANGED,
@@ -93,8 +91,7 @@ static gboolean gam_mixer_refresh            (GIOChannel            *source,
 static gpointer parent_class;
 static guint signals[LAST_SIGNAL] = { 0 };
 
-G_DEFINE_TYPE_WITH_CODE (GamMixer , gam_mixer, GTK_TYPE_VBOX,
-                         G_ADD_PRIVATE (GamMixer))
+G_DEFINE_TYPE_WITH_CODE (GamMixer, gam_mixer, GTK_TYPE_BOX, G_ADD_PRIVATE (GamMixer))
 
 static void
 gam_mixer_class_init (GamMixerClass *klass)
@@ -159,6 +156,8 @@ gam_mixer_init (GamMixer *gam_mixer)
     GtkAdjustment *vadjustment;
 
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
+
+    gtk_orientable_set_orientation (GTK_ORIENTABLE (gam_mixer), GTK_ORIENTATION_VERTICAL);
 
     gam_mixer->priv = gam_mixer_get_instance_private (gam_mixer);
 
@@ -386,7 +385,7 @@ gam_mixer_construct_elements (GamMixer *gam_mixer)
                 /* if element is a switch */
                 if (!(snd_mixer_selem_has_playback_volume (elem) || snd_mixer_selem_has_capture_volume (elem))) {
                     if (i % 5 == 0) {
-                        vbox = gtk_vbox_new (FALSE, 0);
+                        vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
                         gtk_box_pack_start (GTK_BOX (gam_mixer->priv->toggle_box),
                                             vbox, TRUE, TRUE, 0);
                         gtk_widget_show (vbox);
