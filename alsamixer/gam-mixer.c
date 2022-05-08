@@ -297,7 +297,7 @@ gam_mixer_constructor (GType                  type,
         input_ids[input_id] = g_io_add_watch_full (channel, G_PRIORITY_HIGH, condition,
                                                    gam_mixer_refresh, gam_mixer,
                                                    NULL);
-      }
+    }
 
     gam_mixer->priv->input_ids = input_ids;
     gam_mixer->priv->input_id_count = (guint) poll_count;
@@ -399,43 +399,43 @@ gam_mixer_construct_sliders (GamMixer *gam_mixer)
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
 
     if (gam_mixer->priv->sliders) {
-            for (guint i = 0; i < g_slist_length (gam_mixer->priv->sliders); i++) {
-                    slider = g_slist_nth_data (gam_mixer->priv->sliders, i);
-                    gtk_widget_hide (slider);
-                    gtk_container_remove (GTK_CONTAINER (gam_mixer->priv->slider_box), slider);
-                }
-
-            g_slist_free (gam_mixer->priv->sliders);
-            gam_mixer->priv->sliders = NULL;
+        for (guint i = 0; i < g_slist_length (gam_mixer->priv->sliders); i++) {
+            slider = g_slist_nth_data (gam_mixer->priv->sliders, i);
+            gtk_widget_hide (slider);
+            gtk_container_remove (GTK_CONTAINER (gam_mixer->priv->slider_box), slider);
         }
+
+        g_slist_free (gam_mixer->priv->sliders);
+        gam_mixer->priv->sliders = NULL;
+    }
 
     for (elem = snd_mixer_first_elem (gam_mixer->priv->handle); elem; elem = snd_mixer_elem_next (elem)) {
-            if (snd_mixer_selem_is_active (elem)) {
-                    if (snd_mixer_selem_has_playback_volume (elem) || snd_mixer_selem_has_capture_volume (elem)) {
-                            if (gam_app_get_mixer_slider_style () == 1) {
-                                    slider = gam_slider_dual_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
-                                    gam_slider_dual_set_size_groups (GAM_SLIDER_DUAL (slider),
-                                                                     gam_mixer->priv->pan_size_group,
-                                                                     gam_mixer->priv->mute_size_group,
-                                                                     gam_mixer->priv->capture_size_group);
-                                } else {
-                                    slider = gam_slider_pan_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
-                                    gam_slider_pan_set_size_groups (GAM_SLIDER_PAN (slider),
-                                                                    gam_mixer->priv->pan_size_group,
-                                                                    gam_mixer->priv->mute_size_group,
-                                                                    gam_mixer->priv->capture_size_group);
-                                }
-
-                            gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box),
-                                                slider, TRUE, TRUE, 0);
-
-                            if (gam_slider_get_visible (GAM_SLIDER (slider)))
-                                gtk_widget_show (slider);
-
-                            gam_mixer->priv->sliders = g_slist_append (gam_mixer->priv->sliders, slider);
-                        }
+        if (snd_mixer_selem_is_active (elem)) {
+            if (snd_mixer_selem_has_playback_volume (elem) || snd_mixer_selem_has_capture_volume (elem)) {
+                if (gam_app_get_mixer_slider_style () == 1) {
+                    slider = gam_slider_dual_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
+                    gam_slider_dual_set_size_groups (GAM_SLIDER_DUAL (slider),
+                                                     gam_mixer->priv->pan_size_group,
+                                                     gam_mixer->priv->mute_size_group,
+                                                     gam_mixer->priv->capture_size_group);
+                } else {
+                    slider = gam_slider_pan_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
+                    gam_slider_pan_set_size_groups (GAM_SLIDER_PAN (slider),
+                                                    gam_mixer->priv->pan_size_group,
+                                                    gam_mixer->priv->mute_size_group,
+                                                    gam_mixer->priv->capture_size_group);
                 }
+
+                gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box),
+                                    slider, TRUE, TRUE, 0);
+
+                if (gam_slider_get_visible (GAM_SLIDER (slider)))
+                    gtk_widget_show (slider);
+
+                gam_mixer->priv->sliders = g_slist_append (gam_mixer->priv->sliders, slider);
+            }
         }
+    }
 }
 
 GtkWidget *
