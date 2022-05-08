@@ -131,12 +131,13 @@ gam_slider_pan_constructor (GType                  type,
 
     gam_slider_add_pan_widget (GAM_SLIDER (gam_slider_pan), gam_slider_pan->priv->pan_slider);
 
-    gam_slider_pan->priv->vol_adjustment = gtk_adjustment_new (gam_slider_pan_get_volume (gam_slider_pan), 0, 101, 1, 5, 1);
+    gam_slider_pan->priv->vol_adjustment = gtk_adjustment_new (gam_slider_pan_get_volume (gam_slider_pan), 0, 100, 1, 5, 1);
 
     g_signal_connect (G_OBJECT (gam_slider_pan->priv->vol_adjustment), "value-changed",
                       G_CALLBACK (gam_slider_pan_volume_value_changed_cb), gam_slider_pan);
 
     gam_slider_pan->priv->vol_slider = gtk_vscale_new (GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment));
+    gtk_range_set_inverted (GTK_RANGE (gam_slider_pan->priv->vol_slider), TRUE);
     gtk_widget_show (gam_slider_pan->priv->vol_slider);
     gtk_scale_set_draw_value (GTK_SCALE (gam_slider_pan->priv->vol_slider), FALSE);
 
@@ -187,14 +188,14 @@ gam_slider_pan_get_volume (GamSliderPan *gam_slider_pan)
         snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, &left_chn);
 
     if (snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        return rint (100 - (left_chn * (100 / (gfloat)pmax)));
+        return rint (left_chn * (100 / (gfloat)pmax));
     } else {
         if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
             snd_mixer_selem_get_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
         else
             snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
 
-        return rint (100 - (MAX(left_chn, right_chn) * (100 / (gfloat)pmax)));
+        return rint (MAX(left_chn, right_chn) * (100 / (gfloat)pmax));
     }
 }
 
@@ -221,7 +222,7 @@ gam_slider_pan_update_volume (GamSliderPan *gam_slider_pan)
     else
         pan_value = 0;
 
-    left_chn = right_chn = rint ((100 - vol_value) / (100 / (gfloat)pmax));
+    left_chn = right_chn = rint (vol_value / (100 / (gfloat)pmax));
 
     if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
         if (pan_value < 0) {
@@ -276,8 +277,14 @@ gam_slider_pan_refresh (GamSlider *gam_slider)
 {
     GamSliderPan * const gam_slider_pan = GAM_SLIDER_PAN (snd_mixer_elem_get_callback_private (gam_slider_get_elem (gam_slider)));
 
+    /* disconnect the signal, otherwise a value change outside the app causes a refresh, which sets the value, which calls the callback,
+     * which in turn rounds the value and sets it again system-wide
+     */
+    g_signal_handlers_disconnect_by_data (G_OBJECT (gam_slider_pan->priv->vol_adjustment), gam_slider_pan);
     gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_pan->priv->vol_adjustment),
                               (gdouble) gam_slider_pan_get_volume (gam_slider_pan));
+    g_signal_connect (G_OBJECT (gam_slider_pan->priv->vol_adjustment), "value-changed",
+                      G_CALLBACK (gam_slider_pan_volume_value_changed_cb), gam_slider_pan);
 
     if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (gam_slider))) {
         gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_pan->priv->pan_adjustment),

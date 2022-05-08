@@ -173,6 +173,7 @@ gam_mixer_init (GamMixer *gam_mixer)
     /* sliders */
     scrolled_window = gtk_scrolled_window_new (GTK_ADJUSTMENT (hadjustment), GTK_ADJUSTMENT (vadjustment));
     gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
+    gtk_scrolled_window_set_overlay_scrolling (GTK_SCROLLED_WINDOW (scrolled_window), FALSE);
     gtk_box_pack_start (GTK_BOX (gam_mixer), scrolled_window, TRUE, TRUE, 0);
 
     gam_mixer->priv->slider_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
