@@ -54,9 +54,6 @@ struct _GamMixerPrivate
     GtkSizeGroup *mute_size_group;
     GtkSizeGroup *capture_size_group;
 
-    GSList       *sliders;
-    GSList       *toggles;
-
     snd_mixer_t  *handle;
 
     GList        *io_channels;
@@ -171,9 +168,6 @@ gam_mixer_init (GamMixer *gam_mixer)
     gam_mixer->priv->input_id_count = 0;
     gam_mixer->priv->input_ids = NULL;
 
-    gam_mixer->priv->sliders = NULL;
-    gam_mixer->priv->toggles = NULL;
-
     gam_mixer->priv->pan_size_group = gtk_size_group_new (GTK_SIZE_GROUP_BOTH);
     gam_mixer->priv->mute_size_group = gtk_size_group_new (GTK_SIZE_GROUP_BOTH);
     gam_mixer->priv->capture_size_group = gtk_size_group_new (GTK_SIZE_GROUP_BOTH);
@@ -234,12 +228,6 @@ gam_mixer_finalize (GObject *object)
     gam_mixer->priv->pan_size_group = NULL;
     gam_mixer->priv->mute_size_group = NULL;
     gam_mixer->priv->capture_size_group = NULL;
-
-    g_slist_free (gam_mixer->priv->sliders);
-    g_slist_free (gam_mixer->priv->toggles);
-
-    gam_mixer->priv->sliders = NULL;
-    gam_mixer->priv->toggles = NULL;
 
     G_OBJECT_CLASS (parent_class)->finalize (object);
 }
@@ -408,7 +396,6 @@ gam_mixer_construct_elements (GamMixer *gam_mixer)
                                         toggle, FALSE, FALSE, 0);
                     if (gam_toggle_get_visible (GAM_TOGGLE (toggle)))
                         gtk_widget_show (toggle);
-                    gam_mixer->priv->toggles = g_slist_append (gam_mixer->priv->toggles, toggle);
 
                     i++;
                 }
@@ -422,52 +409,79 @@ gam_mixer_construct_elements (GamMixer *gam_mixer)
 void
 gam_mixer_construct_sliders (GamMixer *gam_mixer)
 {
+    GtkWidget *playback_frame;
+    GtkWidget *capture_frame;
+    GtkWidget *box;
     GtkWidget *slider;
     GtkWidget *separator;
     snd_mixer_elem_t *elem;
 
     g_return_if_fail (GAM_IS_MIXER (gam_mixer));
 
-    if (gam_mixer->priv->sliders) {
-        for (guint i = 0; i < g_slist_length (gam_mixer->priv->sliders); i++) {
-            slider = g_slist_nth_data (gam_mixer->priv->sliders, i);
-            gtk_widget_hide (slider);
-            gtk_container_remove (GTK_CONTAINER (gam_mixer->priv->slider_box), slider);
-        }
+    /* playback */
+    playback_frame = gtk_frame_new ("Playback");
+    gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box), playback_frame, TRUE, TRUE, 5);
 
-        g_slist_free (gam_mixer->priv->sliders);
-        gam_mixer->priv->sliders = NULL;
-    }
+    box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add (GTK_CONTAINER (playback_frame), box);
 
     for (elem = snd_mixer_first_elem (gam_mixer->priv->handle); elem; elem = snd_mixer_elem_next (elem)) {
         if (snd_mixer_selem_is_active (elem)) {
-            if (snd_mixer_selem_has_playback_volume (elem) || snd_mixer_selem_has_capture_volume (elem)) {
+            if (snd_mixer_selem_has_playback_volume (elem)) {
                 if (g_strcmp0 (gam_mixer->priv->style, "DUAL") == 0) {
-                    slider = gam_slider_dual_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
+                    slider = gam_slider_dual_new (elem, gam_mixer, TRUE);
                     gam_slider_dual_set_size_groups (GAM_SLIDER_DUAL (slider),
                                                      gam_mixer->priv->pan_size_group,
                                                      gam_mixer->priv->mute_size_group,
                                                      gam_mixer->priv->capture_size_group);
                 } else {
-                    slider = gam_slider_pan_new (elem, gam_mixer, GAM_APP (gam_mixer->priv->app));
+                    slider = gam_slider_pan_new (elem, gam_mixer, TRUE);
                     gam_slider_pan_set_size_groups (GAM_SLIDER_PAN (slider),
                                                     gam_mixer->priv->pan_size_group,
                                                     gam_mixer->priv->mute_size_group,
                                                     gam_mixer->priv->capture_size_group);
                 }
-
-                gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box),
-                                    slider, TRUE, TRUE, 0);
+                gtk_box_pack_start (GTK_BOX (box), slider, TRUE, TRUE, 0);
 
                 separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
-
-                gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box),
-                                    separator, FALSE, FALSE, 0);
+                gtk_box_pack_start (GTK_BOX (box), separator, FALSE, FALSE, 0);
 
                 if (gam_slider_get_visible (GAM_SLIDER (slider)))
                     gtk_widget_show (slider);
+            }
+        }
+    }
 
-                gam_mixer->priv->sliders = g_slist_append (gam_mixer->priv->sliders, slider);
+    /* playback */
+    capture_frame = gtk_frame_new ("Capture");
+    gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box), capture_frame, TRUE, TRUE, 5);
+
+    box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add (GTK_CONTAINER (capture_frame), box);
+
+    for (elem = snd_mixer_first_elem (gam_mixer->priv->handle); elem; elem = snd_mixer_elem_next (elem)) {
+        if (snd_mixer_selem_is_active (elem)) {
+            if (snd_mixer_selem_has_capture_volume (elem)) {
+                if (g_strcmp0 (gam_mixer->priv->style, "DUAL") == 0) {
+                    slider = gam_slider_dual_new (elem, gam_mixer, FALSE);
+                    gam_slider_dual_set_size_groups (GAM_SLIDER_DUAL (slider),
+                                                     gam_mixer->priv->pan_size_group,
+                                                     gam_mixer->priv->mute_size_group,
+                                                     gam_mixer->priv->capture_size_group);
+                } else {
+                    slider = gam_slider_pan_new (elem, gam_mixer, FALSE);
+                    gam_slider_pan_set_size_groups (GAM_SLIDER_PAN (slider),
+                                                    gam_mixer->priv->pan_size_group,
+                                                    gam_mixer->priv->mute_size_group,
+                                                    gam_mixer->priv->capture_size_group);
+                }
+                gtk_box_pack_start (GTK_BOX (box), slider, TRUE, TRUE, 0);
+
+                separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
+                gtk_box_pack_start (GTK_BOX (box), separator, FALSE, FALSE, 0);
+
+                if (gam_slider_get_visible (GAM_SLIDER (slider)))
+                    gtk_widget_show (slider);
             }
         }
     }
@@ -564,38 +578,4 @@ gam_mixer_show_props_dialog (GamMixer *gam_mixer)
 
         return;
     }
-}
-
-gint
-gam_mixer_slider_count (GamMixer *gam_mixer)
-{
-    g_return_val_if_fail (GAM_IS_MIXER (gam_mixer), 0);
-
-    return g_slist_length (gam_mixer->priv->sliders);
-}
-
-gint
-gam_mixer_toggle_count (GamMixer *gam_mixer)
-{
-    g_return_val_if_fail (GAM_IS_MIXER (gam_mixer), 0);
-
-    return g_slist_length (gam_mixer->priv->toggles);
-}
-
-GamSlider *
-gam_mixer_get_nth_slider (GamMixer *gam_mixer, gint index)
-{
-    g_return_val_if_fail (GAM_IS_MIXER (gam_mixer), NULL);
-    g_return_val_if_fail (gam_mixer->priv->sliders != NULL, NULL);
-
-    return GAM_SLIDER (g_slist_nth_data (gam_mixer->priv->sliders, index));
-}
-
-GamToggle *
-gam_mixer_get_nth_toggle (GamMixer *gam_mixer, gint index)
-{
-    g_return_val_if_fail (GAM_IS_MIXER (gam_mixer), NULL);
-    g_return_val_if_fail (gam_mixer->priv->toggles != NULL, NULL);
-
-    return GAM_TOGGLE (g_slist_nth_data (gam_mixer->priv->toggles, index));
 }

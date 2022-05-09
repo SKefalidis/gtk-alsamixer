@@ -71,12 +71,6 @@ gboolean              gam_mixer_get_visible       (GamMixer    *gam_mixer);
 void                  gam_mixer_set_visible       (GamMixer    *gam_mixer,
                                                    gboolean     visible);
 void                  gam_mixer_show_props_dialog (GamMixer    *gam_mixer);
-gint                  gam_mixer_slider_count      (GamMixer    *gam_mixer);
-gint                  gam_mixer_toggle_count      (GamMixer    *gam_mixer);
-GamSlider            *gam_mixer_get_nth_slider    (GamMixer    *gam_mixer,
-                                                   gint         index);
-GamToggle            *gam_mixer_get_nth_toggle    (GamMixer    *gam_mixer,
-                                                   gint         index);
 
 
 G_END_DECLS

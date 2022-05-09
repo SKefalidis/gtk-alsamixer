@@ -208,7 +208,7 @@ gam_app_switch_mixer_ui (GtkWidget *button,
             mixer = gam_mixer_new (gam_app, card, "PAN");
 
         if (gam_mixer_get_visible (GAM_MIXER (mixer)))
-            gtk_widget_show (mixer);
+            gtk_widget_show_all (mixer);
 
         g_signal_connect (G_OBJECT (mixer), "display_name_changed",
                           G_CALLBACK (gam_app_mixer_display_name_changed_cb), gam_app);

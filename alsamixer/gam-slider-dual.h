@@ -53,7 +53,7 @@ struct _GamSliderDualClass
 GType      gam_slider_dual_get_type        (void) G_GNUC_CONST;
 GtkWidget *gam_slider_dual_new             (gpointer      elem,
                                             GamMixer     *gam_mixer,
-                                            GamApp       *gam_app);
+                                            gboolean      playback);
 void       gam_slider_dual_set_size_groups (GamSliderDual *gam_slider_dual,
                                             GtkSizeGroup  *pan_size_group,
                                             GtkSizeGroup  *mute_size_group,

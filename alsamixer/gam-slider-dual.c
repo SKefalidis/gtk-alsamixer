@@ -29,6 +29,9 @@
 
 #include "gam-slider-dual.h"
 
+/* TODO: move to enum file and rewrite the property */
+enum ctl_dir { PLAYBACK, CAPTURE };
+
 struct _GamSliderDualPrivate
 {
     GtkWidget *lock_button;
@@ -38,6 +41,27 @@ struct _GamSliderDualPrivate
     GtkAdjustment *vol_adjustment_right;
     gdouble    pan;
     gboolean   refreshing;
+    enum ctl_dir   type;
+};
+
+static int (* const is_mono[2])(snd_mixer_elem_t *) = {
+    snd_mixer_selem_is_playback_mono,
+    snd_mixer_selem_is_capture_mono,
+};
+
+static int (* const has_volume[2])(snd_mixer_elem_t *) = {
+    snd_mixer_selem_has_playback_volume,
+    snd_mixer_selem_has_capture_volume,
+};
+
+static double (* const get_normalized_volume[2])(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t) = {
+    get_normalized_playback_volume,
+    get_normalized_capture_volume,
+};
+
+static int (* const set_normalized_volume[2])(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, double, int) = {
+    set_normalized_playback_volume,
+    set_normalized_capture_volume,
 };
 
 static void     gam_slider_dual_finalize                      (GObject               *object);
@@ -113,18 +137,25 @@ gam_slider_dual_finalize (GObject *object)
 
 static GObject *
 gam_slider_dual_constructor (GType                  type,
-                            guint                  n_construct_properties,
-                            GObjectConstructParam *construct_params)
+                             guint                  n_construct_properties,
+                             GObjectConstructParam *construct_params)
 {
-    GObject *object;
-    GamSliderDual *gam_slider_dual;
-    GtkWidget *hbox;
+    GObject        *object;
+    GamSliderDual  *gam_slider_dual;
+    GtkWidget      *hbox;
+    gboolean        is_playback;
 
     object = (* G_OBJECT_CLASS (parent_class)->constructor) (type,
                                                              n_construct_properties,
                                                              construct_params);
 
     gam_slider_dual = GAM_SLIDER_DUAL (object);
+
+    g_object_get (G_OBJECT (gam_slider_dual), "is-playback", &is_playback, NULL);
+    if (is_playback == TRUE)
+        gam_slider_dual->priv->type = PLAYBACK;
+    else
+        gam_slider_dual->priv->type = CAPTURE;
 
     hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show (hbox);
@@ -140,7 +171,7 @@ gam_slider_dual_constructor (GType                  type,
 
     gtk_box_pack_start (GTK_BOX (hbox), gam_slider_dual->priv->vol_slider_left, TRUE, TRUE, 0);
 
-    if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
+    if (!is_mono[gam_slider_dual->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
         gam_slider_dual->priv->vol_adjustment_right = gtk_adjustment_new (gam_slider_dual_get_volume_right (gam_slider_dual), 0, 100, 1, 5, 1);
 
         g_signal_connect (G_OBJECT (gam_slider_dual->priv->vol_adjustment_right), "value-changed", G_CALLBACK (gam_slider_dual_volume_right_value_changed_cb), gam_slider_dual);
@@ -155,7 +186,7 @@ gam_slider_dual_constructor (GType                  type,
 
     gam_slider_add_volume_widget (GAM_SLIDER (gam_slider_dual), hbox);
 
-    if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
+    if (!is_mono[gam_slider_dual->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
         if (gam_app_get_slider_toggle_style () == 0)
             gam_slider_dual->priv->lock_button = gtk_toggle_button_new_with_label (_("Lock"));
         else
@@ -184,10 +215,7 @@ gam_slider_dual_get_volume_left (GamSliderDual *gam_slider_dual)
 {
     gdouble vol;
 
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual))))
-        vol = get_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_LEFT);
-    else
-        vol = get_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_LEFT);
+    vol = get_normalized_volume[gam_slider_dual->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_LEFT);
 
     return lrint (ceil (vol * 100));
 }
@@ -197,10 +225,7 @@ gam_slider_dual_get_volume_right (GamSliderDual *gam_slider_dual)
 {
     gdouble vol;
 
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual))))
-        vol = get_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_RIGHT);
-    else
-        vol = get_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_RIGHT);
+    vol = get_normalized_volume[gam_slider_dual->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_RIGHT);
 
     return lrint (ceil (vol * 100));
 }
@@ -217,11 +242,7 @@ gam_slider_dual_update_volume_left (GamSliderDual *gam_slider_dual)
         vol_value = 0;
 
     /* set volume */
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
-        set_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_LEFT, vol_value, 1);
-    } else {
-        set_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_LEFT, vol_value, 1);
-    }
+    set_normalized_volume[gam_slider_dual->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_LEFT, vol_value, 1);
 }
 
 static void
@@ -236,11 +257,7 @@ gam_slider_dual_update_volume_right (GamSliderDual *gam_slider_dual)
         vol_value = 0;
 
     /* set volume */
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
-        set_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_RIGHT, vol_value, 1);
-    } else {
-        set_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_RIGHT, vol_value, 1);
-    }
+    set_normalized_volume[gam_slider_dual->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)), SND_MIXER_SCHN_FRONT_RIGHT, vol_value, 1);
 }
 
 static gint
@@ -263,7 +280,7 @@ gam_slider_dual_volume_left_value_changed_cb (GtkWidget *widget, GamSliderDual *
 
     gam_slider_dual_update_volume_left (gam_slider_dual);
 
-    if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
+    if (!is_mono[gam_slider_dual->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gam_slider_dual->priv->lock_button))) {
             gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_right),
                                       gtk_adjustment_get_value (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_left)) -
@@ -285,7 +302,7 @@ gam_slider_dual_volume_right_value_changed_cb (GtkWidget *widget, GamSliderDual 
 
     gam_slider_dual_update_volume_right (gam_slider_dual);
 
-    if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
+    if (!is_mono[gam_slider_dual->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_dual)))) {
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gam_slider_dual->priv->lock_button))) {
             gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_left),
                                       gtk_adjustment_get_value (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_right)) +
@@ -313,7 +330,7 @@ gam_slider_dual_refresh (GamSlider *gam_slider)
     gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_left), (gdouble) gam_slider_dual_get_volume_left (gam_slider_dual));
     g_signal_connect (G_OBJECT (gam_slider_dual->priv->vol_adjustment_left), "value-changed", G_CALLBACK (gam_slider_dual_volume_left_value_changed_cb), gam_slider_dual);
 
-    if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (gam_slider))) {
+    if (!is_mono[gam_slider_dual->priv->type] (gam_slider_get_elem (gam_slider))) {
         g_signal_handlers_disconnect_by_data (G_OBJECT (gam_slider_dual->priv->vol_adjustment_right), gam_slider_dual);
         gtk_adjustment_set_value (GTK_ADJUSTMENT (gam_slider_dual->priv->vol_adjustment_right), (gdouble) gam_slider_dual_get_volume_right (gam_slider_dual));
         g_signal_connect (G_OBJECT (gam_slider_dual->priv->vol_adjustment_right), "value-changed", G_CALLBACK (gam_slider_dual_volume_right_value_changed_cb), gam_slider_dual);
@@ -351,14 +368,14 @@ gam_slider_dual_set_locked (GamSliderDual *gam_slider_dual, gboolean locked)
 }
 
 GtkWidget *
-gam_slider_dual_new (gpointer elem, GamMixer *gam_mixer, GamApp *gam_app)
+gam_slider_dual_new (gpointer elem, GamMixer *gam_mixer, gboolean playback)
 {
     g_return_val_if_fail (GAM_IS_MIXER (gam_mixer), NULL);
 
     return g_object_new (GAM_TYPE_SLIDER_DUAL,
                          "elem", elem,
                          "mixer", gam_mixer,
-                         "app", gam_app,
+                         "is-playback", playback,
                          NULL);
 }
 

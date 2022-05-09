@@ -53,7 +53,7 @@ struct _GamSliderPanClass
 GType      gam_slider_pan_get_type        (void) G_GNUC_CONST;
 GtkWidget *gam_slider_pan_new             (gpointer      elem,
                                            GamMixer     *gam_mixer,
-                                           GamApp       *gam_app);
+                                           gboolean      playback);
 void       gam_slider_pan_set_size_groups (GamSliderPan *gam_slider_pan,
                                            GtkSizeGroup *pan_size_group,
                                            GtkSizeGroup *mute_size_group,

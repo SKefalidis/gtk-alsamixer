@@ -31,7 +31,7 @@ enum {
     PROP_0,
     PROP_ELEM,
     PROP_MIXER,
-    PROP_APP
+    PROP_IS_PLAYBACK,
 };
 
 enum {
@@ -41,11 +41,11 @@ enum {
 
 struct _GamSliderPrivate
 {
-    gpointer          app;
     gpointer          mixer;
     snd_mixer_elem_t *elem;
     gchar            *name;
     gchar            *name_config;
+    gboolean          is_playback;
     GtkWidget        *vbox;
     GtkWidget        *label;
     GtkWidget        *mute_button;
@@ -116,10 +116,11 @@ gam_slider_class_init (GamSliderClass *klass)
                                                            (GParamFlags) (G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
 
     g_object_class_install_property (gobject_class,
-                                     PROP_APP,
-                                     g_param_spec_pointer ("app",
-                                                           _("Main Application"),
-                                                           _("Main Application"),
+                                     PROP_IS_PLAYBACK,
+                                     g_param_spec_boolean ("is-playback",
+                                                           _("IsPlayback"),
+                                                           _("IsPlayback"),
+                                                           TRUE,
                                                            (GParamFlags) (G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
 }
 
@@ -133,7 +134,6 @@ gam_slider_init (GamSlider *gam_slider)
     gam_slider->priv = gam_slider_get_instance_private (gam_slider);
 
     gam_slider->priv->elem = NULL;
-    gam_slider->priv->app = NULL;
     gam_slider->priv->mixer = NULL;
     gam_slider->priv->vbox = NULL;
     gam_slider->priv->name = NULL;
@@ -162,7 +162,6 @@ gam_slider_finalize (GObject *object)
     gam_slider->priv->mute_button = NULL;
     gam_slider->priv->capture_button = NULL;
     gam_slider->priv->elem = NULL;
-    gam_slider->priv->app = NULL;
     gam_slider->priv->mixer = NULL;
     gam_slider->priv->vbox = NULL;
 
@@ -263,9 +262,8 @@ gam_slider_set_property (GObject      *object,
             gam_slider->priv->mixer = g_value_get_pointer (value);
             g_object_notify (G_OBJECT (gam_slider), "mixer");
             break;
-        case PROP_APP:
-            gam_slider->priv->app = g_value_get_pointer (value);
-            g_object_notify (G_OBJECT (gam_slider), "app");
+        case PROP_IS_PLAYBACK:
+            gam_slider->priv->is_playback = g_value_get_boolean (value);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -290,8 +288,8 @@ gam_slider_get_property (GObject     *object,
         case PROP_MIXER:
             g_value_set_pointer (value, gam_slider->priv->mixer);
             break;
-        case PROP_APP:
-            g_value_set_pointer (value, gam_slider->priv->app);
+        case PROP_IS_PLAYBACK:
+            g_value_set_boolean (value, gam_slider->priv->is_playback);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

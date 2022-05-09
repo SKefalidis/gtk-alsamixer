@@ -28,12 +28,36 @@
 
 #include "gam-slider-pan.h"
 
+/* TODO: move to enum file and rewrite the property */
+enum ctl_dir { PLAYBACK, CAPTURE };
+
 struct _GamSliderPanPrivate
 {
     GtkWidget *pan_slider;
     GtkWidget *vol_slider;
     GtkAdjustment *pan_adjustment;
     GtkAdjustment *vol_adjustment;
+    enum ctl_dir   type;
+};
+
+static int (* const is_mono[2])(snd_mixer_elem_t *) = {
+    snd_mixer_selem_is_playback_mono,
+    snd_mixer_selem_is_capture_mono,
+};
+
+static int (* const has_volume[2])(snd_mixer_elem_t *) = {
+    snd_mixer_selem_has_playback_volume,
+    snd_mixer_selem_has_capture_volume,
+};
+
+static double (* const get_normalized_volume[2])(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t) = {
+    get_normalized_playback_volume,
+    get_normalized_capture_volume,
+};
+
+static int (* const set_normalized_volume[2])(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, double, int) = {
+    set_normalized_playback_volume,
+    set_normalized_capture_volume,
 };
 
 static void     gam_slider_pan_finalize                (GObject               *object);
@@ -105,8 +129,9 @@ gam_slider_pan_constructor (GType                  type,
                             guint                  n_construct_properties,
                             GObjectConstructParam *construct_params)
 {
-    GObject *object;
+    GObject      *object;
     GamSliderPan *gam_slider_pan;
+    gboolean      is_playback;
 
     object = (* G_OBJECT_CLASS (parent_class)->constructor) (type,
                                                              n_construct_properties,
@@ -114,7 +139,13 @@ gam_slider_pan_constructor (GType                  type,
 
     gam_slider_pan = GAM_SLIDER_PAN (object);
 
-    if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
+    g_object_get (G_OBJECT (gam_slider_pan), "is-playback", &is_playback, NULL);
+    if (is_playback == TRUE)
+        gam_slider_pan->priv->type = PLAYBACK;
+    else
+        gam_slider_pan->priv->type = CAPTURE;
+
+    if (!is_mono[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
         gam_slider_pan->priv->pan_adjustment = gtk_adjustment_new (gam_slider_pan_get_pan (gam_slider_pan), -100, 100, 1, 5, 1);
 
         g_signal_connect (G_OBJECT (gam_slider_pan->priv->pan_adjustment), "value-changed",
@@ -153,18 +184,11 @@ gam_slider_pan_constructor (GType                  type,
 static gint
 gam_slider_pan_get_pan (GamSliderPan *gam_slider_pan)
 {
-    glong left_chn, right_chn;
+    gdouble left_chn, right_chn;
 
-    if (!snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
-            snd_mixer_selem_get_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, &left_chn);
-        else
-            snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, &left_chn);
-
-        if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan))))
-            snd_mixer_selem_get_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
-        else
-            snd_mixer_selem_get_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, &right_chn);
+    if (!is_mono[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
+        left_chn = get_normalized_volume[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT);
+        right_chn = get_normalized_volume[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT);
 
         if ((gam_slider_pan_get_volume (gam_slider_pan) != 0) && (left_chn != right_chn))
             return rint (((gdouble)(right_chn - left_chn) / (gdouble)MAX(left_chn, right_chn)) * 100);
@@ -176,23 +200,15 @@ gam_slider_pan_get_pan (GamSliderPan *gam_slider_pan)
 static gint
 gam_slider_pan_get_volume (GamSliderPan *gam_slider_pan)
 {
-    gdouble left_playback_vol = 0, left_capture_vol = 0;
-    gdouble right_playback_vol = 0, right_capture_vol = 0;
-    gboolean mono = snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)));
+    gdouble left_vol = 0;
+    gdouble right_vol = 0;
+    gboolean mono = is_mono[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)));
 
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        left_playback_vol = get_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT);
-        if (mono == FALSE)
-            right_playback_vol = get_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT);
+    left_vol = get_normalized_volume[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT);
+    if (mono == FALSE)
+        right_vol = get_normalized_volume[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT);
 
-        return lrint (ceil (MAX (left_playback_vol, right_playback_vol) * 100));
-    } else {
-        left_capture_vol = get_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT);
-        if (mono == FALSE)
-            right_capture_vol = get_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT);
-
-        return lrint (ceil (MAX (left_capture_vol, right_capture_vol) * 100));
-    }
+    return lrint (ceil (MAX (left_vol, right_vol) * 100));
 }
 
 static void
@@ -200,7 +216,7 @@ gam_slider_pan_update_volume (GamSliderPan *gam_slider_pan)
 {
     gdouble left_vol_value, right_vol_value, vol_value;
     gdouble pan_value;
-    gboolean mono = snd_mixer_selem_is_playback_mono (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)));
+    gboolean mono = is_mono[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)));
 
     /* get values */
     if (gam_slider_pan->priv->vol_adjustment)
@@ -227,15 +243,9 @@ gam_slider_pan_update_volume (GamSliderPan *gam_slider_pan)
     right_vol_value /= 100;
 
     /* set volume */
-    if (snd_mixer_selem_has_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)))) {
-        set_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, left_vol_value, 1);
-        if (mono == FALSE)
-            set_normalized_playback_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, right_vol_value, 1);
-    } else {
-        set_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, left_vol_value, 1);
-        if (mono == FALSE)
-            set_normalized_capture_volume (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, right_vol_value, 1);
-    }
+    set_normalized_volume[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_LEFT, left_vol_value, 1);
+    if (mono == FALSE)
+        set_normalized_volume[gam_slider_pan->priv->type] (gam_slider_get_elem (GAM_SLIDER (gam_slider_pan)), SND_MIXER_SCHN_FRONT_RIGHT, right_vol_value, 1);
 }
 
 static gint
@@ -288,14 +298,14 @@ gam_slider_pan_refresh (GamSlider *gam_slider)
 }
 
 GtkWidget *
-gam_slider_pan_new (gpointer elem, GamMixer *gam_mixer, GamApp *gam_app)
+gam_slider_pan_new (gpointer elem, GamMixer *gam_mixer, gboolean playback)
 {
     g_return_val_if_fail (GAM_IS_MIXER (gam_mixer), NULL);
 
     return g_object_new (GAM_TYPE_SLIDER_PAN,
                          "elem", elem,
                          "mixer", gam_mixer,
-                         "app", gam_app,
+                         "is-playback", playback,
                          NULL);
 }
 
