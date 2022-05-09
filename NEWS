@@ -1,0 +1,12 @@
+0.1.0
+======
+xfce4-alsamixer is a port and drastic rewrite of gtk-alsamixer to GTK 3 for the Xfce desktop. This is an unofficial application.
+
+In the process of porting a lot of bugs and issues have been fixed, making xfce4-alsamixer significantly more stable and useful to the end user.
+
+Highlights:
+- GTK 3 Port
+- Improved UI (improved slider behavior, switching UI layouts on the fly and many more)
+- Sliders now represent the human perception of loudness instead of decibels (thanks to code written by the alsa-utils team).
+- Changing audio settings outside the app no longer causes infinite recursion.
+- Capture elements are properly supported.
