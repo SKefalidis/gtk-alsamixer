@@ -31,7 +31,6 @@
 
 struct _GamSliderDualPrivate
 {
-    gpointer   app;
     GtkWidget *lock_button;
     GtkWidget *vol_slider_left;
     GtkWidget *vol_slider_right;
@@ -87,10 +86,6 @@ gam_slider_dual_init (GamSliderDual *gam_slider_dual)
 
     gam_slider_dual->priv = gam_slider_dual_get_instance_private (gam_slider_dual);
 
-    g_object_get (G_OBJECT (gam_slider_dual),
-                  "app", &gam_slider_dual->priv->app,
-                  NULL);
-
     gam_slider_dual->priv->lock_button = NULL;
     gam_slider_dual->priv->vol_slider_left = NULL;
     gam_slider_dual->priv->vol_slider_right = NULL;
@@ -108,9 +103,6 @@ gam_slider_dual_finalize (GObject *object)
 
     gam_slider_dual = GAM_SLIDER_DUAL (object);
 
-    g_object_unref (gam_slider_dual->priv->app);
-
-    gam_slider_dual->priv->app = NULL;
     gam_slider_dual->priv->vol_adjustment_left = NULL;
     gam_slider_dual->priv->vol_adjustment_right = NULL;
     gam_slider_dual->priv->vol_slider_left = NULL;
