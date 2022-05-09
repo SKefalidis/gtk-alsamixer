@@ -115,12 +115,10 @@ gam_app_constructor (GType                  type,
                      guint                  n_construct_properties,
                      GObjectConstructParam *construct_params)
 {
-    GObject *object;
-    GamApp *gam_app;
-    GtkWidget *main_box, *mixer, *label, *button;
-    snd_ctl_t *ctl_handle;
-    gint result, index = 0;
-    gchar *card;
+    GObject   *object;
+    GamApp    *gam_app;
+    GtkWidget *main_box, *button;
+    gint       index = -1;
 
     object = (* G_OBJECT_CLASS (parent_class)->constructor) (type,
                                                              n_construct_properties,
@@ -133,11 +131,16 @@ gam_app_constructor (GType                  type,
     g_signal_connect (G_OBJECT (gam_app), "delete_event",
                       G_CALLBACK (gam_app_delete), NULL);
 
-    do {
-        card = g_strdup_printf ("hw:%d", index++);
+    while (snd_card_next(&index) == 0 && index >= 0) {
+        GtkWidget *mixer;
+        GtkWidget *label;
+        snd_ctl_t *ctl_handle;
+        gchar     *card;
+        gint       result;
+
+        card = g_strdup_printf ("hw:%d", index);
 
         result = snd_ctl_open (&ctl_handle, card, 0);
-
         if (result == 0) {
             snd_ctl_close(ctl_handle);
 
@@ -159,7 +162,7 @@ gam_app_constructor (GType                  type,
         }
 
         g_free (card);
-    } while (result == 0);
+    }
 
     // Pack widgets into window
     main_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
