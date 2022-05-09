@@ -450,7 +450,7 @@ gam_mixer_construct_sliders (GamMixer *gam_mixer)
                 separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
 
                 gtk_box_pack_start (GTK_BOX (gam_mixer->priv->slider_box),
-                                    separator, TRUE, TRUE, 0);
+                                    separator, FALSE, FALSE, 0);
 
                 if (gam_slider_get_visible (GAM_SLIDER (slider)))
                     gtk_widget_show (slider);
