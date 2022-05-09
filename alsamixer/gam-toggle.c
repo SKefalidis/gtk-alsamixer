@@ -139,8 +139,8 @@ gam_toggle_constructor (GType                  type,
                         guint                  n_construct_properties,
                         GObjectConstructParam *construct_params)
 {
-    GObject *object;
-    GamToggle *gam_toggle;
+    GObject     *object;
+    GamToggle   *gam_toggle;
 
     object = (* G_OBJECT_CLASS (parent_class)->constructor) (type,
                                                              n_construct_properties,
@@ -148,7 +148,7 @@ gam_toggle_constructor (GType                  type,
 
     gam_toggle = GAM_TOGGLE (object);
 
-    gtk_button_set_label (GTK_BUTTON (gam_toggle), gam_toggle_get_display_name (gam_toggle));
+    gtk_button_set_label (GTK_BUTTON (gam_toggle), gam_toggle_get_name (gam_toggle));
 
     gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (gam_toggle),
                                   gam_toggle_get_state (gam_toggle));

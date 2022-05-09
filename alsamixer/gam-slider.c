@@ -174,10 +174,11 @@ gam_slider_constructor (GType                  type,
                         guint                  n_construct_properties,
                         GObjectConstructParam *construct_params)
 {
-    GObject *object;
-    GamSlider *gam_slider;
-    GtkWidget *separator;
-    gint value;
+    GObject    *object;
+    GamSlider  *gam_slider;
+    GtkWidget  *separator;
+    gchar      *display_name;
+    gint        value;
 
     object = (* G_OBJECT_CLASS (parent_class)->constructor) (type,
                                                              n_construct_properties,
@@ -197,7 +198,9 @@ gam_slider_constructor (GType                  type,
     gtk_box_pack_start (GTK_BOX (gam_slider),
                         separator, FALSE, TRUE, 0);
 
-    gam_slider->priv->label = gtk_label_new_with_mnemonic (gam_slider_get_display_name (gam_slider));
+    display_name = gam_slider_get_display_name (gam_slider);
+    gam_slider->priv->label = gtk_label_new_with_mnemonic (display_name);
+    g_free (display_name);
     gtk_widget_show (gam_slider->priv->label);
 
     gtk_box_pack_start (GTK_BOX (gam_slider->priv->vbox),
@@ -379,7 +382,6 @@ gam_slider_get_name (GamSlider *gam_slider)
 {
     g_return_val_if_fail (GAM_IS_SLIDER (gam_slider), NULL);
 
-//g_warning("lolcat");g_warning(snd_mixer_selem_get_name (gam_slider->priv->elem));
     return snd_mixer_selem_get_name (gam_slider->priv->elem);
     
 }
@@ -400,18 +402,13 @@ gam_slider_get_config_name (GamSlider *gam_slider)
 gchar *
 gam_slider_get_display_name (GamSlider *gam_slider)
 {
-    gchar *name, *disp_name;
+    gchar *disp_name;
 
     g_return_val_if_fail (GAM_IS_SLIDER (gam_slider), NULL);
 
     disp_name = g_strndup (gam_slider_get_name (gam_slider), 8);
 
-//    if (name == NULL)
-        name = g_strdup (disp_name);
-
-    g_free (disp_name);
-
-    return name;
+    return disp_name;
 }
 
 void

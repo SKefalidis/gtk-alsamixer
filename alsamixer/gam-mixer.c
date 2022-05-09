@@ -59,8 +59,9 @@ struct _GamMixerPrivate
 
     snd_mixer_t  *handle;
 
-    guint         input_id_count;
+    GList        *io_channels;
     guint        *input_ids;
+    guint         input_id_count;
 
     gchar        *card_id;
     gchar        *card_name;
@@ -208,11 +209,19 @@ gam_mixer_finalize (GObject *object)
 
     for (input_id = 0; input_id < gam_mixer->priv->input_id_count; ++input_id)
         g_source_remove (gam_mixer->priv->input_ids[input_id]);
+    g_list_free_full (gam_mixer->priv->io_channels, (void (*) (void*)) g_io_channel_unref);
 
     g_free (gam_mixer->priv->card_id);
     g_free (gam_mixer->priv->card_name);
     g_free (gam_mixer->priv->mixer_name);
     g_free (gam_mixer->priv->mixer_name_config);
+    g_free (gam_mixer->priv->style);
+    g_free (gam_mixer->priv->input_ids);
+    g_object_unref (gam_mixer->priv->capture_size_group);
+    g_object_unref (gam_mixer->priv->mute_size_group);
+    g_object_unref (gam_mixer->priv->pan_size_group);
+
+    snd_mixer_close (gam_mixer->priv->handle);
 
     gam_mixer->priv->handle = NULL;
     gam_mixer->priv->app = NULL;
@@ -307,6 +316,7 @@ gam_mixer_constructor (GType                  type,
         input_ids[input_id] = g_io_add_watch_full (channel, G_PRIORITY_HIGH, condition,
                                                    gam_mixer_refresh, gam_mixer,
                                                    NULL);
+        gam_mixer->priv->io_channels = g_list_prepend (gam_mixer->priv->io_channels, channel);
     }
 
     gam_mixer->priv->input_ids = input_ids;
@@ -331,10 +341,12 @@ gam_mixer_set_property (GObject      *object,
             g_object_notify (G_OBJECT (gam_mixer), "app");
             break;
         case PROP_CARD_ID:
+            g_free (gam_mixer->priv->card_id);
             gam_mixer->priv->card_id = g_strdup (g_value_get_string (value));
             g_object_notify (G_OBJECT (gam_mixer), "card_id");
             break;
         case PROP_STYLE:
+            g_free (gam_mixer->priv->style);
             gam_mixer->priv->style = g_strdup (g_value_get_string (value));
             g_object_notify (G_OBJECT (gam_mixer), "style");
             break;

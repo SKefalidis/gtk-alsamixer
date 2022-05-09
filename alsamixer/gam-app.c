@@ -155,7 +155,7 @@ gam_app_constructor (GType                  type,
             g_signal_connect (G_OBJECT (mixer), "visibility_changed",
                               G_CALLBACK (gam_app_mixer_visibility_changed_cb), gam_app);
 
-            label = gtk_label_new (gam_mixer_get_display_name (GAM_MIXER (mixer)));
+            label = gtk_label_new (gam_mixer_get_mixer_name (GAM_MIXER (mixer)));
             gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_LEFT);
 
             gtk_notebook_append_page (GTK_NOTEBOOK (gam_app->priv->notebook), mixer, label);
@@ -215,7 +215,7 @@ gam_app_switch_mixer_ui (GtkWidget *button,
         g_signal_connect (G_OBJECT (mixer), "visibility_changed",
                           G_CALLBACK (gam_app_mixer_visibility_changed_cb), gam_app);
 
-        label = gtk_label_new (gam_mixer_get_display_name (GAM_MIXER (mixer)));
+        label = gtk_label_new (gam_mixer_get_mixer_name (GAM_MIXER (mixer)));
         gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_LEFT);
 
         gtk_notebook_insert_page (GTK_NOTEBOOK (gam_app->priv->notebook), mixer, label, current_page);
@@ -224,6 +224,7 @@ gam_app_switch_mixer_ui (GtkWidget *button,
     }
 
     g_free (card);
+    g_free (style);
 }
 
 //static void
