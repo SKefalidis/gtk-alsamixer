@@ -1,7 +1,7 @@
 Xfce Alsamixer
 =============
 
-Xfce Alsamixer is a GUI Alsa Mixer built for the Xfce desktop using GTK 3. It is not an official Xfce Application (those reside in gitlab.xfce.org).
+Xfce Alsamixer is a GUI Alsa Mixer built for the Xfce desktop using GTK 3. It is not an official Xfce Application (those reside at https://gitlab.xfce.org).
 
 ## Installation
 Xfce Alsamixer uses the same build/installation process that official Xfce Apps use: https://docs.xfce.org/xfce/building#building_the_packages
