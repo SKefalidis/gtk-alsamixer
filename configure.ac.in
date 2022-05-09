@@ -8,7 +8,7 @@ dnl
 dnl ***************************
 dnl *** Version information ***
 dnl ***************************
-m4_define([alsamixer_version_major], [1])
+m4_define([alsamixer_version_major], [0])
 m4_define([alsamixer_version_minor], [0])
 m4_define([alsamixer_version_micro], [0])
 m4_define([alsamixer_version_nano], [])
